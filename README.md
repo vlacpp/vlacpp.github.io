@@ -290,9 +290,12 @@ needs a secure context (https or localhost) and hides itself without one.
 ## Architecture
 
 The architecture is HTML and CSS in `index.html`, not an image, so it reflows: five columns on wide
-screens (client, wire, runtime, wire, bundle), one stacked column with vertical arrows below 760px.
-It keeps the paper's diagram's content (client fields, Protobuf over ZeroMQ, the runtime's four
-features, llama.cpp's ggml, the GGUF bundle) and shows all seven backends instead of CUDA and CPU.
+screens, read left to right as bundle, wire, runtime, wire, client, and one stacked column in the
+same order with vertical arrows below 760px. It keeps the paper's diagram's content (client
+fields, Protobuf over ZeroMQ, the runtime's four features, llama.cpp's ggml, the GGUF bundle) but
+shows all seven backends instead of CUDA and CPU, adds the SO-101 to the client's targets, and
+lists only `model.gguf` in the bundle. The client's five thumbnails sit two by two with the SO-101
+centred under them; on phones they run in one row of five.
 
 Its pictures and marks, all local, nothing loaded from elsewhere:
 
@@ -306,8 +309,9 @@ Its pictures and marks, all local, nothing loaded from elsewhere:
 - `assets/arch/llama-cpp.svg`: llama.cpp's icon (`media/llama1-icon-transparent.svg`, MIT), with
   the editor metadata stripped.
 - `assets/arch/vla-cpp-logo.png`: the project's wordmark from the previous page, trimmed to 250x48.
-- `assets/arch/{libero,simplerenv,aloha,ur10e}.jpg`: 168x126 thumbnails cut from the page's own
-  clips and the UR10e figure.
+- `assets/arch/{libero,simplerenv,aloha,ur10e,so101}.jpg`: 168x126 thumbnails cut from the page's
+  own clips and the UR10e figure; the SO-101 one is a frame of the stacking rollout at 0:55, saved
+  without metadata.
 
 The backend chips above the abstract use the same sprite, a logo before each backend, and drop the
 vendor's name where the logo is the name (AMD, Intel).
