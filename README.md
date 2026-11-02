@@ -1,6 +1,6 @@
 # Project page — "vla.cpp: A Unified Inference Runtime for Vision-Language-Action Models"
 
-Anonymous project page for the ICRA 2027 submission. Static, no build step:
+Project page for vla.cpp, linking the arXiv paper and the code. Static, no build step:
 
     python3 -m http.server -d . 8000
 
@@ -15,7 +15,8 @@ Anonymous project page for the ICRA 2027 submission. Static, no build step:
     figures/                    the teaser's TikZ source and build script
     figures/roofline/           how the roofline's FLOPs and bytes were counted
     assets/vla.cpp.mp4          hero overview video (+ -poster.jpg)
-    assets/*.png, ur10e.jpg     figures rasterised from the paper's PDFs
+    assets/ur10e.jpg            the UR10e figure, rasterised from the paper's PDF
+    assets/arch/                the architecture's logos and thumbnails (icons are a sprite in index.html)
     assets/videos/*.mp4         four ALOHA rollouts, two LIBERO-Object and two SimplerEnv clips
 
 Total, about 20 MB. Everything is tracked in git.
@@ -55,7 +56,7 @@ header says so. Where the project has newer information, the page uses it:
   band (the paper had only N1.6 outside). Octo-Small and TurboVLA have no reference rate;
 - the explorer (below);
 - the roofline (below) is redrawn from the explorer's latencies and a fresh FLOP and byte count;
-- the architecture diagram is cropped above its "One Runtime · … · Eleven Models" banner.
+- the architecture is redrawn in the page (see *Architecture* below) and shows all seven backends.
 
 Everything else has nothing newer and still comes from the paper: teaser panels (c) and (d), the
 abstract's BitVLA results (200/200 on the Orin Nano, 1.3 GiB, 4.0–4.6×), the SmolVLA case study,
@@ -186,8 +187,8 @@ Things the app is careful about:
   shows the fixed-input difference and flags anything above the 2.9e-3 bar those notes use;
   the OpenVINO and Hexagon checks predate the latency pin, and the pane says that too.
 
-What stays out, for anonymity: commit hashes, PR numbers, branch names, the Hugging Face
-organisation the checkpoints live under, and links to the repository.
+The explorer's data names no one: no commit hashes, PR numbers, branch names or Hugging Face
+organisation.
 
 ## Videos
 
@@ -242,11 +243,13 @@ because the asset carries no policy label.
 A placeholder card upgrades itself when its file appears, so more footage needs no HTML edit —
 drop the `.mp4` in and give the card the right filename.
 
-## Anonymity
+## Review period
 
-No author names, affiliations, institution, repository link or contact address;
-`<meta name="robots" content="noindex">` keeps it out of search indexes. The figure PNGs are
-rasterised, so they carry no PDF metadata. Every video was re-muxed with `-map_metadata -1`; the
+This page names the authors (in the footer's BibTeX) and links the arXiv paper and the code. While
+the paper is under double-anonymous review, nothing submitted for review may link here, and this
+page must not link to any anonymous copy of itself. `<meta name="robots" content="noindex">` keeps
+it out of search results until the review ends. The figure PNGs are rasterised, so they carry no
+PDF metadata. Every video was re-muxed with `-map_metadata -1`; the
 hero video arrived carrying a `Made with Remotion 4.0.525` comment, which is gone.
 
 Two things in the hero video are worth a look before this goes anywhere public, because neither
@@ -259,28 +262,44 @@ matches the paper:
 
 Re-render or trim the video if either should go.
 
-To de-anonymise, the places to edit are the two `.btn.soon` buttons in `<nav class="links">` and
-the footer.
+## Paper, code and BibTeX
 
-## Adding the paper PDF
+The Paper button opens the arXiv abstract (2606.08094) and Code opens
+`github.com/VinRobotics/vla.cpp`, the repository the arXiv entry names. Each button leads with its
+mark from the icon sprite. The footer's BibTeX is arXiv's own entry with a shorter key
+(`nguyen2026vlacpp`); switch it to `@inproceedings` once the paper is published. Its Copy button
+needs a secure context (https or localhost) and hides itself without one.
 
-Put the compiled, anonymised PDF at `assets/paper.pdf`, then replace
+## Architecture
 
-    <a class="btn soon" href="#"><span class="ic">▣</span> Paper</a>
+The architecture is HTML and CSS in `index.html`, not an image, so it reflows: five columns on wide
+screens (client, wire, runtime, wire, bundle), one stacked column with vertical arrows below 760px.
+It keeps the paper's diagram's content (client fields, Protobuf over ZeroMQ, the runtime's four
+features, llama.cpp's ggml, the GGUF bundle) and shows all seven backends instead of CUDA and CPU.
 
-with
+Its pictures and marks, all local, nothing loaded from elsewhere:
 
-    <a class="btn" href="assets/paper.pdf"><span class="ic">▣</span> Paper</a>
+- **Icon sprite** at the top of `<body>`, used as `<svg class="ic"><use href="#..."/></svg>`.
+  Brand marks (NVIDIA, AMD, Qualcomm, Intel, Apple, Python, C++, Hugging Face, GitHub, arXiv) are
+  Simple Icons 16.36.0, CC0; the marks remain their owners' trademarks and stand only for the
+  hardware, software or site named. The hardware and software marks' viewBoxes are cropped to each
+  mark, so wordmarks (AMD, Intel) render wide;
+  `.lg-*` sets each width from its aspect ratio. Interface icons (eye, sliders, chart, message,
+  plug, database, repeat, binary, cpu, file, arrows) are Tabler Icons 3.50.0, MIT.
+- `assets/arch/llama-cpp.svg`: llama.cpp's icon (`media/llama1-icon-transparent.svg`, MIT), with
+  the editor metadata stripped.
+- `assets/arch/vla-cpp-logo.png`: the project's wordmark from the previous page, trimmed to 250x48.
+- `assets/arch/{libero,simplerenv,aloha,ur10e}.jpg`: 168x126 thumbnails cut from the page's own
+  clips and the UR10e figure.
 
-The Code button works the same way — point it at an `anonymous.4open.science` mirror, or at the
-real repository once the submission is no longer blind.
+The backend chips above the abstract use the same sprite, a logo before each backend, and drop the
+vendor's name where the logo is the name (AMD, Intel).
 
 ## Regenerating a figure
 
     pdftoppm -png -r 300 -singlefile <name>.pdf assets/<name>
 
-from `overleaf/vla.cpp/ICRA/`. `vla-cpp-diagram.png` and `ur10e.jpg` came across already
-rasterised from the previous page.
+from `overleaf/vla.cpp/ICRA/`. `ur10e.jpg` came across already rasterised from the previous page.
 
 The roofline and the execution-horizon sweep are no longer images; both are drawn in the page in
 its own colours and fonts (see *Roofline* above). `assets/horizon.js` holds the sweep's numbers,
@@ -288,8 +307,6 @@ copied from the paper's supplementary table: successes out of 50 with their Wils
 request latency and S/L for each S. Success is teal and throughput the neutral second series. The
 S = H setting is shaded like the roofline's memory-bound region, and hovering shows each
 setting's numbers. It keeps the paper's two y-axes.
-
-The diagram was then cropped above its bottom banner, which says eleven models.
 
 The teaser is TikZ, not a PDF. `figures/teaser.tex` is the paper's `teaser.tex` turned into a
 standalone document (IEEEtran, so the fonts match the paper, with the page sized to the figure)
