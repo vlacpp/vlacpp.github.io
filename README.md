@@ -7,7 +7,8 @@ Project page for vla.cpp, linking the arXiv paper and the code. Static, no build
 ## Layout
 
     index.html                  the whole page (inline CSS, ~20 lines of JS)
-                                order: teaser, backend chips, abstract, video, explorer, method, simulation, robots
+                                order: teaser, backend chips, abstract, video, explorer,
+                                architecture, simulation, robots, analysis
     assets/explorer.js          the model x backend explorer
     assets/roofline.js          the roofline, drawn in the page from counted FLOPs and bytes
     assets/horizon.js           the execution-horizon sweep, drawn in the page from the paper's table
@@ -56,17 +57,19 @@ header says so. Where the project has newer information, the page uses it:
   band (the paper had only N1.6 outside). Octo-Small and TurboVLA have no reference rate;
 - the explorer (below);
 - the roofline (below) is redrawn from the explorer's latencies and a fresh FLOP and byte count;
-- the architecture is redrawn in the page (see *Architecture* below) and shows all seven backends.
+- the architecture is redrawn in the page (see *Architecture* below) and shows all seven backends;
+- the robot section has a third embodiment the paper does not: π0.5 on an SO-101 arm, served
+  from an Intel AI board (subsection C).
 
 Everything else has nothing newer and still comes from the paper: teaser panels (c) and (d), the
 abstract's BitVLA results (200/200 on the Orin Nano, 1.3 GiB, 4.0–4.6×), the SmolVLA case study,
-SimplerEnv, and the whole robot section.
+SimplerEnv, and the UR10e and ALOHA subsections.
 
 ## Roofline
 
-The roofline sits at the end of the page, as subsection D after the execution horizon, so the
-two cost discussions read together. `assets/roofline.js` draws one panel per device, RTX 3060
-and AGX Orin, as inline SVG so the labels use the page's fonts. It plots the ten models whose
+The roofline sits in the Analysis section at the end of the page, as subsection B after the
+execution horizon, so the two cost discussions read together. `assets/roofline.js` draws one panel
+per device, RTX 3060 and AGX Orin, as inline SVG so the labels use the page's fonts. It plots the ten models whose
 multiplies run in BF16 (see below). Points are teal like every other measured number; labels
 carry only the model name, and hovering or tabbing to a point shows its numbers. Labels are
 placed in the browser, after measuring them, so they avoid points, each other and the roof; in
@@ -192,7 +195,7 @@ organisation.
 
 ## Videos
 
-Nine in total, all tracked.
+Twelve in total, all tracked.
 
 `assets/vla.cpp.mp4` is the hero overview, placed after the link buttons the way nerfies places
 its teaser. It is 1:50 **with an audio track**, so it does not autoplay — browsers block autoplay
@@ -207,12 +210,26 @@ the 40 trials succeed, and the page shows the minority case rather than cutting 
     aloha-task1-fail-3x.mp4     task 1, setup 5, trial 2   FAIL timeout/retry
     aloha-task2-fail-3x.mp4     task 2, setup 5, trial 4   FAIL complete
 
-The originals are in `vla-cpp.github.io/src/assets/aloha-videos/vlacpp/<task>/<setup>/<trial>/`,
-240 clips over three cameras and 1.1 GB, which is why only four are here. That tree also has a
-`pytorch/` sibling, but `aloha-evidence.js` carries no rows for it and the paper reports no
-PyTorch ALOHA numbers, so there is no side-by-side to make.
+The originals, 240 clips over three cameras and 1.1 GB, stay outside this repo, which is why
+only four are here. They also include PyTorch runs of the same tasks, but no evidence rows come
+with those and the paper reports no PyTorch ALOHA numbers, so there is no side-by-side to make.
 
-The *In simulation* section, between Method and the robots, shows four square clips in a row
+The three SO-101 clips are π0.5 on an Intel AI board (Core Ultra X7 358H), filmed on a phone in
+portrait (368x654). Each was cut, cropped to 4:5 (368x460, dropping green screen above and
+cables below, at a per-clip offset that keeps the arm in frame throughout), sped up 4x with
+`setpts=PTS/4`, scaled to 360x450, stripped of audio and metadata (`-an -map_metadata -1`), and
+encoded with x264 at CRF 28. The page shows them three across, narrower than the column on
+desktop and still three across on phones (`.g3.port`, with `.ph.tall` at 4:5). The page claims
+no success rate or backend for them.
+
+    file                        task              source cut           crop top   at 4x
+    so101-open-drawer-4x.mp4    open the drawer   whole 0:48           y=30       12 s
+    so101-close-drawer-4x.mp4   close the drawer  first 2:10 of 2:50   y=80       32.5 s
+    so101-stack-cube-4x.mp4     stack the cubes   first 1:30 of 3:15   y=150      22.5 s
+
+The raw recordings, with audio, are kept outside this repo.
+
+The *In simulation* section, between Architecture and the robots, shows four square clips in a row
 (two per row on phones), each tagged with its benchmark.
 
 The two LIBERO-Object clips are the runtime's own episodes from a July 2026 CI check on the RTX
