@@ -1,0 +1,67 @@
+diff --git a/ggml/src/ggml-backend.cpp b/ggml/src/ggml-backend.cpp
+index 20bf965..e6e1f26 100644
+--- a/ggml/src/ggml-backend.cpp
++++ b/ggml/src/ggml-backend.cpp
+@@ -458,8 +458,62 @@ enum ggml_status ggml_backend_graph_compute(ggml_backend_t backend, struct ggml_
+     return err;
+ }
+ 
++
++// ---- FLOP / stored-operand byte counter (roofline accounting; scratch build only) ----
++#include <atomic>
++#include <cstdio>
++#include <cstdlib>
++static double g_fc_mm_flop = 0, g_fc_bytes = 0, g_fc_other_flop = 0;
++static long long g_fc_graphs = 0, g_fc_mm = 0, g_fc_unk[GGML_OP_COUNT] = {0};
++static void ggml_fc_report(void) {
++    std::fprintf(stderr, "FLOPCOUNT graphs=%lld mul_mat=%lld mm_flop=%.6e other_flop=%.6e bytes=%.6e\n",
++                 g_fc_graphs, g_fc_mm, g_fc_mm_flop, g_fc_other_flop, g_fc_bytes);
++    for (int i = 0; i < GGML_OP_COUNT; i++) if (g_fc_unk[i])
++        std::fprintf(stderr, "FLOPCOUNT_OP %s %lld\n", ggml_op_name((enum ggml_op) i), g_fc_unk[i]);
++}
++static double ggml_fc_leaf_bytes(const struct ggml_tensor * t) {
++    const struct ggml_tensor * r = t; bool copied = false;
++    while (r && (r->op == GGML_OP_VIEW || r->op == GGML_OP_RESHAPE || r->op == GGML_OP_PERMUTE ||
++                 r->op == GGML_OP_TRANSPOSE || r->op == GGML_OP_CPY || r->op == GGML_OP_CONT)) {
++        if (r->op == GGML_OP_CPY || r->op == GGML_OP_CONT) copied = true;
++        r = r->src[0];
++    }
++    if (!r || r->op != GGML_OP_NONE) return 0;
++    return (double) ggml_nbytes(copied ? r : t);
++}
++static void ggml_fc_count(struct ggml_cgraph * g) {
++    static bool on = std::getenv("VLA_FLOPCOUNT") != nullptr, reg = false;
++    if (!on) return;
++    if (!reg) { reg = true; std::atexit(ggml_fc_report); }
++    g_fc_graphs++;
++    for (int i = 0; i < ggml_graph_n_nodes(g); i++) {
++        struct ggml_tensor * n = ggml_graph_node(g, i);
++        switch (n->op) {
++        case GGML_OP_MUL_MAT: {
++            const struct ggml_tensor * a = n->src[0];
++            // dst = [ne01, ne11, ne12, ne13]; each element is a K=ne00 dot product
++            g_fc_mm_flop += 2.0 * (double) a->ne[0] * (double) n->ne[0] * (double) n->ne[1] * (double) n->ne[2] * (double) n->ne[3];
++            g_fc_bytes += ggml_fc_leaf_bytes(n->src[0]) + ggml_fc_leaf_bytes(n->src[1]);
++            g_fc_mm++;
++            break; }
++        case GGML_OP_FLASH_ATTN_EXT: {
++            const struct ggml_tensor * q = n->src[0], * k = n->src[1], * v = n->src[2];
++            // q [D, n_q, H, B], k [D, n_kv, H_kv, B], v [Dv, n_kv, H_kv, B]: QK^T plus PV
++            g_fc_other_flop += 2.0 * (double) q->ne[1] * (double) k->ne[1] * (double) q->ne[2] * (double) q->ne[3] *
++                               ((double) q->ne[0] + (double) v->ne[0]);
++            g_fc_bytes += ggml_fc_leaf_bytes(k) + ggml_fc_leaf_bytes(v);
++            g_fc_unk[n->op]++;
++            break; }
++        case GGML_OP_NONE: case GGML_OP_VIEW: case GGML_OP_RESHAPE: case GGML_OP_PERMUTE: case GGML_OP_TRANSPOSE:
++            break;
++        default:
++            g_fc_unk[n->op]++;
++        }
++    }
++}
+ enum ggml_status ggml_backend_graph_compute_async(ggml_backend_t backend, struct ggml_cgraph * cgraph) {
+     GGML_ASSERT(backend);
++    ggml_fc_count(cgraph);
+     return backend->iface.graph_compute(backend, cgraph);
+ }
+ 

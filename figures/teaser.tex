@@ -1,0 +1,235 @@
+% ---------------------------------------------------------------------------
+% The paper's page-1 teaser, updated to the project's current state for the
+% project page.  Build with ./build.sh, which writes ../assets/teaser.svg.
+% (a) models and backends from the runtime's support matrix, hardware from the
+%     latest benchmark round;
+% (b) vla.cpp success from the latest 200-episode LIBERO-Object run (RTX 3090),
+%     reference rates as in the paper (published, or PyTorch reproductions for
+%     pi0 and GR00T); Octo-Small and TurboVLA have no reference and are omitted;
+% (c), (d) unchanged from the paper (ternary-kernel study, UR10e table).
+% ---------------------------------------------------------------------------
+\documentclass[conference]{IEEEtran}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,fit}
+\begin{document}
+\definecolor{vcblue}{RGB}{31,101,160}
+\definecolor{vcorange}{RGB}{214,118,36}
+\definecolor{vcgreen}{RGB}{34,132,94}
+\definecolor{vcred}{RGB}{186,58,52}
+\definecolor{vcgray}{RGB}{115,115,115}
+
+% value -> panel-local cm
+\newcommand{\pbx}[1]{(#1-70)*0.101613}       % success rate, panel (b) x
+\newcommand{\pby}[1]{(#1-70)*0.0967742}      % success rate, panel (b) y
+\newcommand{\bary}[1]{(#1)*0.0068182}        % ms, panel (c)
+\newcommand{\rlx}[1]{(log10(#1)-2)*2.0287}   % ms (log), panel (d)
+\newcommand{\rly}[1]{(#1-30)*0.0428571}      % %,  panel (d)
+
+\newsavebox{\teaserbox}
+\sbox{\teaserbox}{%
+\begin{tikzpicture}[
+    x=1cm, y=1cm,
+    ptitle/.style={font=\scriptsize\bfseries, anchor=south west, inner sep=0pt},
+    axline/.style={vcgray, line width=0.4pt},
+    tik/.style={vcgray, line width=0.4pt},
+    tlab/.style={font=\tiny, text=vcgray, inner sep=1pt},
+    alab/.style={font=\tiny, inner sep=1pt},
+    note/.style={font=\tiny, text=vcgray, inner sep=1pt, align=left},
+    fanbox/.style={draw=vcgray!70, rounded corners=1.5pt, fill=black!3,
+                   font=\tiny, align=center, inner sep=2.5pt, text width=3.5cm},
+]
+
+% =====================================================================
+% (a) one binary, one bundle -> heads x backends x hardware
+% =====================================================================
+\begin{scope}[shift={(0,0)}]
+  \node[ptitle] at (0,3.9) {(a) Shared runtime and model format};
+
+  \node[draw=vcblue, fill=vcblue!10, rounded corners=2pt, align=center,
+        font=\tiny, text width=1.1cm, inner sep=2.5pt] (bin) at (0.64,2.10)
+       {\textbf{\texttt{vla.cpp}}\\[1pt] C++ server\\ $+$ GGUF\\ weights};
+
+  \node[fanbox] (mdl) at (3.58,3.24)
+       {\textbf{13 VLA models}\\
+        SmolVLA\,\textperiodcentered\,Evo-1\,\textperiodcentered\,$\pi_0$\,\textperiodcentered\,$\pi_{0.5}$\,\textperiodcentered\,Octo-Small\\
+        GR00T-N1.5/1.6/1.7\,\textperiodcentered\,VLA-JEPA\,\textperiodcentered\,TurboVLA\\
+        VLA-Adapter\,\textperiodcentered\,OpenVLA-OFT\,\textperiodcentered\,BitVLA};
+
+  \node[fanbox] (bck) at (3.58,2.17)
+       {\textbf{7 backends}\\
+        CUDA\,\textperiodcentered\,ROCm\,\textperiodcentered\,Metal\,\textperiodcentered\,CPU\\
+        SYCL\,\textperiodcentered\,OpenVINO\,\textperiodcentered\,Hexagon};
+
+  \node[fanbox] (dev) at (3.58,1.00)
+       {\textbf{Target hardware}\\
+        RTX 30xx--50xx\,\textperiodcentered\,RX 9060 XT\,\textperiodcentered\,Arc A380\\
+        Apple M4\,\textperiodcentered\,Core Ultra iGPU$+$NPU\\
+        Snapdragon X CPU$+$NPU\,\textperiodcentered\,desktop CPUs\\
+        Jetson AGX Orin\,\textperiodcentered\,Orin NX\,\textperiodcentered\,Orin Nano};
+
+  \draw[-{Latex[length=1.3mm]}, vcblue, line width=0.5pt]
+        (bin.east) to[out=35,in=180] (mdl.west);
+  \draw[-{Latex[length=1.3mm]}, vcblue, line width=0.5pt]
+        (bin.east) to[out=0,in=180]  (bck.west);
+  \draw[-{Latex[length=1.3mm]}, vcblue, line width=0.5pt]
+        (bin.east) to[out=-35,in=180] (dev.west);
+
+  \node[font=\tiny, text=vcgreen, inner sep=1pt] at (2.65,0.15)
+       {model adapters share backend operations};
+\end{scope}
+
+% =====================================================================
+% (b) behavioural fidelity: parity against the reference checkpoints
+% =====================================================================
+\begin{scope}[shift={(5.85,0)}]
+  \node[ptitle] at (0,3.9) {(b) Task success vs.\ reference};
+
+  \begin{scope}[shift={(0.85,0.65)}]
+    % +-4 pp band and parity line, clipped to the axes box
+    \begin{scope}
+      \clip (0,0) rectangle (3.15,3.0);
+      \fill[vcblue!12] (0,{-4*0.0967742}) -- (3.15,{(31-4)*0.0967742})
+                    -- (3.15,{(31+4)*0.0967742}) -- (0,{4*0.0967742}) -- cycle;
+      \draw[vcblue, line width=0.5pt, densely dashed] (0,0) -- (3.15,3.0);
+    \end{scope}
+    \draw[axline] (0,0) rectangle (3.15,3.0);
+
+    \foreach \v in {70,80,90,100}{
+      \draw[tik] ({\pbx{\v}},0) -- ({\pbx{\v}},-0.07);
+      \node[tlab, anchor=north] at ({\pbx{\v}},-0.07) {\v};
+      \draw[tik] (0,{\pby{\v}}) -- (-0.07,{\pby{\v}});
+      \node[tlab, anchor=east] at (-0.07,{\pby{\v}}) {\v};
+    }
+    \node[tlab, anchor=north] at (1.575,-0.32) {reference success rate (\%)};
+    \node[tlab, anchor=south, rotate=90] at (-0.50,1.5) {\texttt{vla.cpp} success (\%)};
+
+    % (reference SR, vla.cpp SR) inside the band: Evo-1, pi0.5, GR00T-N1.5,
+    % GR00T-N1.7, VLA-JEPA, VLA-Adapter, OpenVLA-OFT, BitVLA
+    \foreach \rf/\ou in {97.7/98.5, 98.2/97.5, 95.0/97.0, 99.0/98.0,
+                         99.6/100, 99.2/95.5, 98.4/98.5, 99.6/100}{
+      \fill[vcblue] ({\pbx{\rf}},{\pby{\ou}}) circle (1.5pt);
+    }
+    % outside the band: SmolVLA, GR00T-N1.6, pi0
+    \foreach \rf/\ou in {96.0/89.5, 99.0/86.5, 79.0/72.0}{
+      \fill[vcred] ({\pbx{\rf}},{\pby{\ou}}) circle (1.9pt);
+    }
+    % ours vs. reference, right-aligned below-left of each point, clear of the parity line
+    \node[alab, text=vcred, anchor=north east, align=right]
+         at ({\pbx{96.0}-0.06},{\pby{89.5}-0.03}) {SmolVLA\\89.5 vs.\ 96};
+    \node[alab, text=vcred, anchor=north east, align=right]
+         at ({\pbx{99.0}-0.06},{\pby{86.5}-0.18}) {GR00T-N1.6\\86.5 vs.\ 99};
+    \node[alab, text=vcred, anchor=west]
+         at ({\pbx{79.0}+0.08},{\pby{72.0}}) {$\pi_0$\ 72 vs.\ 79};
+    % 100%-SR callout, kept inside the axes box (upper left is empty)
+    \node[alab, anchor=west, align=left] (hundred) at (0.82,2.74)
+         {BitVLA, VLA-JEPA\\$\mathbf{100\%}$ SR};
+    \draw[vcgray, line width=0.35pt]
+         (hundred.east) -- ({\pbx{99.6}-0.05},{\pby{100}+0.02});
+    \node[tlab, anchor=south east, align=right, text=vcblue] at (3.07,0.36)
+         {$\pm4$\,pp band:\\8 of 11 inside};
+  \end{scope}
+  \node[note, anchor=north west] at (0.18,0.13)
+       {200 episodes/model on RTX 3090};
+\end{scope}
+
+% =====================================================================
+% (c) portable IMMA tensor-core ternary GEMM
+% =====================================================================
+\begin{scope}[shift={(10.20,0)}]
+  \node[ptitle] at (0,3.9) {(c) Ternary execution};
+
+  \begin{scope}[shift={(0.70,0.65)}]
+    \draw[axline] (0,0) -- (2.6,0);
+    \draw[axline] (0,0) -- (0,3.0);
+    \foreach \v in {0,100,200,300,400}{
+      \draw[tik] (0,{\bary{\v}}) -- (-0.06,{\bary{\v}});
+      \node[tlab, anchor=east] at (-0.06,{\bary{\v}}) {\v};
+    }
+    \node[tlab, anchor=south, rotate=90] at (-0.48,1.5) {ms / executed action};
+
+    \fill[vcorange!75] (0.30,0) rectangle (0.64,{\bary{172.8}});
+    \fill[vcorange!75] (1.58,0) rectangle (1.92,{\bary{406.6}});
+    \fill[vcblue]      (0.68,0) rectangle (1.02,{\bary{37.85}});
+    \fill[vcblue]      (1.96,0) rectangle (2.30,{\bary{101.11}});
+
+    \node[tlab, anchor=south] at (0.47,{\bary{172.8}}) {172.8};
+    \node[tlab, anchor=south] at (0.85,{\bary{37.85}}) {37.9};
+    \node[tlab, anchor=south] at (1.75,{\bary{406.6}}) {406.6};
+    \node[tlab, anchor=south] at (2.13,{\bary{101.11}}) {101.1};
+
+    % speedup sits on the winning bar, clear of the tall baseline bar
+    \node[alab, text=vcgreen, anchor=south] at (0.85,{\bary{37.85}+0.20})
+         {$\mathbf{4.6\times}$};
+    \node[alab, text=vcgreen, anchor=south] at (2.13,{\bary{101.11}+0.20})
+         {$\mathbf{4.0\times}$};
+
+    \node[tlab, anchor=north] at (0.66,-0.06) {RTX 3060};
+    \node[tlab, anchor=north] at (1.94,-0.06) {AGX Orin};
+
+    \fill[vcorange!75] (0.06,2.80) rectangle (0.24,2.92);
+    \node[tlab, anchor=west] at (0.28,2.86) {\texttt{dp4a}};
+    \fill[vcblue] (0.06,2.58) rectangle (0.24,2.70);
+    \node[tlab, anchor=west] at (0.28,2.64) {IMMA (ours)};
+  \end{scope}
+  \node[note, anchor=north west] at (0.18,0.13)
+       {$S=8$; unchanged task success};
+\end{scope}
+
+% =====================================================================
+% (d) closed loop on a UR10e: latency does not buy success
+% =====================================================================
+\begin{scope}[shift={(13.72,0)}]
+  \node[ptitle] at (0,3.9) {(d) On the robot: latency vs.\ success};
+
+  \begin{scope}[shift={(0.85,0.65)}]
+    \draw[axline] (0,0) rectangle (3.25,3.0);
+    \foreach \v in {100,300,1000,3000}{
+      \draw[tik] ({\rlx{\v}},0) -- ({\rlx{\v}},-0.07);
+      \node[tlab, anchor=north] at ({\rlx{\v}},-0.07) {\v};
+    }
+    \foreach \v in {40,60,80,100}{
+      \draw[tik] (0,{\rly{\v}}) -- (-0.07,{\rly{\v}});
+      \node[tlab, anchor=east] at (-0.07,{\rly{\v}}) {\v};
+    }
+    \node[tlab, anchor=north] at (1.625,-0.32) {round-trip latency (ms, log)};
+    \node[tlab, anchor=south, rotate=90] at (-0.50,1.5) {task success (\%)};
+
+    % latency / SR / Wilson low / Wilson high  (Table II, top)
+    \foreach \ms/\sr/\lo/\hi in {111.4/75/53/89, 582.0/60/39/78,
+                                 2164.4/60/39/78, 3652.9/70/48/85}{
+      \draw[vcblue!55, line width=0.6pt]
+           ({\rlx{\ms}},{\rly{\lo}}) -- ({\rlx{\ms}},{\rly{\hi}});
+      \draw[vcblue!55, line width=0.6pt]
+           ({\rlx{\ms}-0.06},{\rly{\lo}}) -- ({\rlx{\ms}+0.06},{\rly{\lo}});
+      \draw[vcblue!55, line width=0.6pt]
+           ({\rlx{\ms}-0.06},{\rly{\hi}}) -- ({\rlx{\ms}+0.06},{\rly{\hi}});
+      \fill[vcblue] ({\rlx{\ms}},{\rly{\sr}}) circle (1.9pt);
+    }
+
+    \node[alab, anchor=south west] at ({\rlx{111.4}+0.06},{\rly{75}+0.02}) {CUDA};
+    \node[alab, anchor=south west] at ({\rlx{582.0}+0.06},{\rly{60}+0.02}) {Metal};
+    \node[alab, anchor=north east] at ({\rlx{2164.4}-0.07},{\rly{60}-0.02}) {CPU i9};
+    \node[alab, anchor=south east] at ({\rlx{3652.9}-0.04},{\rly{70}+0.02}) {CPU Ryzen};
+
+    \node[tlab, anchor=north] at ({\rlx{111.4}+0.16},{\rly{53}-0.04}) {17.7\,Hz};
+    \node[tlab, anchor=north] at ({\rlx{3652.9}-0.20},{\rly{48}-0.04}) {5.0\,Hz};
+
+    \draw[{Latex[length=1.1mm]}-{Latex[length=1.1mm]}, vcgray, line width=0.4pt]
+         ({\rlx{111.4}},0.24) -- ({\rlx{3652.9}},0.24);
+    \node[tlab, anchor=center, fill=white, inner sep=1.5pt] at (1.63,0.24)
+         {$33\times$ latency};
+  \end{scope}
+  \node[note, anchor=north west] at (0.08,0.13)
+       {20 episodes/backend; $95\%$ CIs};
+\end{scope}
+
+\end{tikzpicture}%
+}
+
+\edef\tw{\the\wd\teaserbox}
+\edef\th{\the\dimexpr\ht\teaserbox+\dp\teaserbox\relax}
+\pdfpagewidth=\tw \pdfpageheight=\th \hoffset=-1in \voffset=-1in
+\shipout\hbox{\special{papersize=\tw,\th}\box\teaserbox}
+\end{document}

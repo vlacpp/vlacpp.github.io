@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>vla.cpp: A Unified Inference Runtime for Vision-Language-Action Models</title>
-<meta name="description" content="vla.cpp, a unified C++ inference runtime that serves eleven vision-language-action policies across CUDA, Metal, CPU, SYCL and OpenVINO, down to an 8 GB Jetson Orin Nano.">
+<meta name="description" content="vla.cpp, a unified C++ inference runtime that serves thirteen vision-language-action policies across CPU, CUDA, ROCm, Metal, SYCL, OpenVINO and Hexagon, down to an 8 GB Jetson Orin Nano.">
 <meta name="robots" content="noindex">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -54,6 +54,28 @@ h1 .eng{font-family:var(--mono);font-size:.86em;color:var(--engine);letter-spaci
 .btn:hover{background:#2b2b2b;color:#fff}
 .btn.soon{background:#fff;color:var(--faint);border-color:var(--line);cursor:default;pointer-events:none}
 .btn .ic{font-size:.88em;line-height:1}
+.notice{max-width:720px;margin:1.6rem auto 0;padding:.75rem 1rem;background:var(--panel);
+  border-radius:var(--r);font-size:14px;line-height:1.55;color:var(--body);text-align:left}
+.notice b{color:var(--ink);font-weight:600}
+
+/* backend chips above the abstract, in each vendor's brand colour: --c is the colour as in its
+   logo (the dot), --t the same hue darkened only as far as 4.5:1 contrast needs (the name), --bg a
+   light tint of it. NVIDIA #76B900, AMD #ED1C24, Qualcomm #3253DC, Intel #0068B5, Apple silver.
+   CPU has no one vendor, so it takes the page's own ink, darker than Apple's grey. */
+.bk-h{font-size:.72rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);
+  text-align:center;margin:0 0 .7rem}
+.bk{list-style:none;padding:0;margin:0 auto 2.6rem;display:flex;flex-wrap:wrap;justify-content:center;
+  gap:.5rem}
+.bk li{display:inline-flex;align-items:center;gap:.42em;padding:.38em .8em;border-radius:290486px;
+  font-size:13.5px;line-height:1.35;color:var(--body);white-space:nowrap;background:var(--bg)}
+.bk li::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--c);flex:none}
+.bk li b{font-weight:600;color:var(--t)}
+.bk .cuda{--c:#76b900;--t:#4e7a00;--bg:#eff7e0}
+.bk .rocm{--c:#ed1c24;--t:#d31118;--bg:#fdebeb}
+.bk .npu{--c:#3253dc;--t:#3253dc;--bg:#eaeefc}
+.bk .ov{--c:#0068b5;--t:#0068b5;--bg:#e6f0f8}
+.bk .metal{--c:#a2aaad;--t:#616b6e;--bg:#ebeced}
+.bk .cpu{--c:var(--ink);--t:var(--ink);--bg:var(--panel)}
 
 /* hero video, nerfies teaser treatment */
 .teaser{margin:0}
@@ -85,11 +107,58 @@ figure.narrow figcaption{max-width:640px;margin-left:auto;margin-right:auto}
 figcaption{font-size:14px;line-height:1.5;color:var(--muted);margin-top:.8rem;text-align:left}
 figcaption b{color:var(--ink);font-weight:600}
 
-/* ---------------- highlights ---------------- */
-.hl{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin:1.6rem 0 0}
-.hl div{background:var(--panel);border-radius:var(--r);padding:1.1rem 1rem;text-align:center}
-.hl .v{font-size:1.9rem;font-weight:600;line-height:1.1;color:var(--ink)}
-.hl .l{font-size:13.5px;line-height:1.45;color:var(--muted);margin-top:.4rem}
+/* ---------------- teaser ----------------
+   One SVG (505.47 x 120.29 pt), shown as four crops so the panels can stack on narrow screens.
+   --x / --w are each panel's left edge and width in SVG units; --row is the width of one row. */
+.tz-row{display:flex;flex-wrap:wrap;justify-content:center;row-gap:1rem}
+.tz-p{--row:505.47;width:calc(var(--w) / var(--row) * 100%);overflow:hidden}
+figure .tz-p img{max-width:none;border-radius:0;width:calc(505.47 / var(--w) * 100%);
+  margin-left:calc(var(--x) / var(--w) * -100%)}
+@media (min-width:761px){ .tz-row{flex-wrap:nowrap} }
+@media (max-width:760px){ .tz-row{max-width:620px;margin:0 auto} .tz-p{--row:289} }
+@media (max-width:520px){ .tz-p{--row:165} }
+
+/* ---------------- roofline ----------------
+   Drawn by assets/roofline.js: one inline SVG per device, so labels use the page's fonts. Teal
+   points are measured, as everywhere else; the roof and its labels are ink, the grid recessive. */
+.rf{display:grid;grid-template-columns:1fr 1fr;gap:1.4rem}
+@media (max-width:760px){ .rf{grid-template-columns:1fr;max-width:520px;margin:0 auto} }
+.rf-p{position:relative;min-width:0}
+.rf-t{font-size:15px;font-weight:600;color:var(--ink);text-align:center;margin-bottom:2px}
+.rf-svg{display:block;width:100%;height:auto;overflow:visible;font-family:var(--sans)}
+.rf-mem{fill:var(--panel)}
+.rf-g{stroke:var(--line);stroke-width:1}
+.rf-g2{stroke:var(--line-soft);stroke-width:1}
+.rf-tick{font-size:11px;fill:var(--muted)}
+.rf-axis{font-size:12px;fill:var(--body)}
+.rf-reg{font-size:11px;fill:var(--muted);font-style:italic}
+.rf-ridge{stroke:var(--faint);stroke-width:1;stroke-dasharray:3 3}
+.rf-roof{fill:none;stroke:var(--ink);stroke-width:2;stroke-linejoin:round}
+.rf-ceil{font-size:11px;fill:var(--ink)}
+.rf-pt{fill:var(--ours);stroke:#fff;stroke-width:1.5;pointer-events:none}
+.rf-hit{fill:transparent;outline:none}
+.rf-hit:focus-visible{stroke:var(--link);stroke-width:2}
+.rf-lab{font-size:11.5px;fill:var(--body);pointer-events:none}
+.rf-lead{stroke:var(--faint);stroke-width:1}
+
+/* Execution-horizon chart (assets/horizon.js) shares the roofline's grid, text, point and tooltip
+   styles. Success is teal like every measured result; throughput is the neutral second series. */
+.hz{position:relative;max-width:620px;margin:0 auto}
+.hz-key{display:flex;flex-wrap:wrap;justify-content:center;gap:4px 22px;font-size:13px;color:var(--body);
+  margin:0 0 6px}
+.hz-key>span{display:inline-flex;align-items:center;gap:7px}
+.hz-key svg{display:block}
+.hz-suc{fill:none;stroke:var(--ours);stroke-width:2;stroke-linejoin:round}
+.hz-err{stroke:var(--ours);stroke-width:1.5;opacity:.55}
+.hz-thr{fill:none;stroke:var(--muted);stroke-width:2;stroke-dasharray:6 4;stroke-linejoin:round}
+.hz-sq{fill:var(--muted);stroke:#fff;stroke-width:1.5}
+.rf-tip{position:absolute;z-index:3;pointer-events:none;transform:translate(-50%,-100%);opacity:0;
+  background:#fff;border:1px solid var(--line);border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,.08);
+  padding:6px 9px;font-size:12px;line-height:1.45;color:var(--body);text-align:left;white-space:nowrap;
+  transition:opacity .1s}
+.rf-tip.on{opacity:1}
+.rf-tip b{display:block;color:var(--ink);font-weight:600}
+.rf-tip span{display:block}
 
 /* ---------------- plain table ---------------- */
 .tbl{border-collapse:collapse;width:100%;font-size:14px;margin:1.3rem 0 0}
@@ -108,6 +177,8 @@ figcaption b{color:var(--ink);font-weight:600}
 .g3{grid-template-columns:repeat(3,1fr)}
 .g2{grid-template-columns:repeat(2,1fr)}
 .g1{grid-template-columns:1fr;max-width:640px;margin-left:auto;margin-right:auto}
+.g4{grid-template-columns:repeat(4,1fr)}
+@media (max-width:760px){ .g4{grid-template-columns:repeat(2,1fr)} }
 @media (max-width:760px){ .g3,.g2{grid-template-columns:1fr;max-width:520px;margin-left:auto;margin-right:auto} }
 
 .vid{display:flex;flex-direction:column}
@@ -146,49 +217,65 @@ figcaption b{color:var(--ink);font-weight:600}
 
 /* ================= model x backend explorer ================= */
 .xp{border:1px solid var(--line);border-radius:var(--r);overflow:hidden;margin-top:1.6rem}
-.xp-head{padding:16px 18px 16px;border-bottom:1px solid var(--line);background:var(--panel)}
-.xp-devices{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:8px}
-.xp-target{text-align:left;background:#fff;border:1px solid var(--line);border-radius:6px;
-  padding:9px 11px;cursor:pointer;font-family:var(--sans);font-size:13px;line-height:1.35;color:var(--body)}
-.xp-target:hover{border-color:var(--muted)}
-.xp-target.on{border-color:var(--link);box-shadow:inset 0 0 0 1px var(--link)}
-.xp-target b{display:block;font-size:13.5px;font-weight:600;color:var(--ink)}
-.xp-target span{display:block;color:var(--muted);font-size:11.5px;margin-top:1px}
 .xp-b{display:inline-block;font-style:normal;font-size:9.5px;font-weight:700;letter-spacing:.07em;
   text-transform:uppercase;padding:1px 5px;margin:6px 4px 0 0;border-radius:3px}
 .xp-b.cuda{background:#eaf1fb;color:var(--link)}
+.xp-b.rocm{background:#fdeeea;color:#b4441f}
 .xp-b.metal{background:#efeaf7;color:#6b46a8}
 .xp-b.ov,.xp-b.sycl{background:#e9f1ef;color:var(--ours)}
-.xp-b.edge{background:#fdeeea;color:#b4441f}
+.xp-b.npu{background:#f4efe2;color:#7a5c12}
 .xp-b.cpu{background:#efefef;color:var(--muted)}
-.xp-b.n{background:#fff;color:var(--muted);border:1px solid var(--line)}
 
+/* The matrix: devices down, models across, each measured cell shaded by its p50. One teal,
+   six log-spaced steps, darker is faster; white text on the two darkest. */
 .xp-matrix{padding:16px 18px 18px;background:var(--panel);border-bottom:1px solid var(--line);
   overflow-x:auto}
-.xp-mgrid{display:grid;grid-template-columns:112px repeat(8,minmax(52px,1fr));gap:3px;
-  align-items:center;min-width:560px}
-.xp-mh{font-size:10px;line-height:1.2;color:var(--muted);text-align:center;padding:0 1px 5px}
+.xp-mgrid{display:grid;grid-template-columns:minmax(148px,168px) repeat(13,minmax(42px,1fr));
+  gap:2px;min-width:720px}
+.xp-mc{position:sticky;left:0;z-index:1;background:var(--panel)}
+.xp-mh{font-family:var(--sans);font-size:9.5px;line-height:1.15;color:var(--muted);text-align:center;
+  padding:0 1px 6px;background:none;border:0;cursor:pointer;align-self:end}
+.xp-mh:hover{color:var(--link)}
 .xp-mh.on{color:var(--ink);font-weight:700}
-.xp-mr{font-size:12px;color:var(--body);padding-right:8px;white-space:nowrap;
-  overflow:hidden;text-overflow:ellipsis}
-.xp-mr.on{color:var(--ink);font-weight:600}
-.xp-c{position:relative;height:17px;width:100%;padding:0;border-radius:2px;cursor:pointer;
-  border:1px solid transparent}
-.xp-c.on{background:var(--ours)}
-.xp-c.oom{background:#f6d7d7;border-color:#e9b6b6}
-.xp-c.off{background:#fff;border:1px dashed var(--line)}
-.xp-c:hover{outline:2px solid var(--link);outline-offset:1px}
-.xp-c.sel{outline:2px solid var(--link);outline-offset:1px}
-.xp-sr{position:absolute;top:0;left:0;width:1px;height:1px;overflow:hidden;
-  clip:rect(0 0 0 0);white-space:nowrap}
-.xp-leg{list-style:none;padding:0;margin:11px 0 0;display:flex;flex-wrap:wrap;gap:6px 15px;
-  font-size:11.5px;color:var(--muted)}
-.xp-leg li{display:flex;align-items:center;gap:6px}
-.xp-leg i{display:block;width:15px;height:15px;border-radius:2px}
-.xp-leg i.on{background:var(--ours)}
-.xp-leg i.oom{background:#f6d7d7;border:1px solid #e9b6b6}
-.xp-leg i.off{background:#fff;border:1px dashed var(--line)}
-.xp-cap{font-size:11.5px;color:var(--muted);line-height:1.5;margin:8px 0 0;max-width:72ch}
+.xp-mg{grid-column:1/-1;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;
+  color:var(--muted);padding:9px 0 2px}
+.xp-mr{position:sticky;left:0;z-index:1;display:flex;align-items:center;gap:6px;min-width:0;
+  padding:0 8px 0 0;background:var(--panel);border:0;cursor:pointer;font-family:var(--sans);
+  text-align:left;white-space:nowrap;overflow:hidden}
+.xp-mr b{font-size:12px;font-weight:400;color:var(--body)}
+.xp-mr span{font-size:10px;color:var(--muted)}
+.xp-mr:hover b{color:var(--link)}
+.xp-mr.on b{color:var(--ink);font-weight:600}
+.xp-c{display:block;height:21px;width:100%;padding:0;border-radius:2px;cursor:pointer;
+  border:1px solid transparent;font-family:var(--mono);font-size:10px;line-height:19px;
+  text-align:center;color:var(--ink);white-space:nowrap;overflow:hidden}
+.xp .b0{background:#005B54}
+.xp .b1{background:#0D8077}
+.xp .b2{background:#5AB7AD}
+.xp .b3{background:#8FD3CB}
+.xp .b4{background:#B8E8E1}
+.xp .b5{background:#DEF6F3}
+.xp-c.b0,.xp-c.b1{color:#fff}
+.xp-c.mo{font-style:italic}
+.xp-c.s-na,.xp-c.s-nr{background:#fff;border:1px dashed var(--line);color:var(--muted)}
+.xp-c.s-oom,.xp-c.s-big{background:#f6d7d7;border-color:#e9b6b6;color:var(--bad)}
+.xp-c.s-big{font-size:9px}
+.xp-c.s-fail{background:#fff;border-color:#e9b6b6;color:var(--bad)}
+.xp-c:hover,.xp-c.sel{position:relative;z-index:2;outline:2px solid var(--link);outline-offset:1px}
+.xp-key{display:flex;flex-wrap:wrap;align-items:flex-start;gap:12px 28px;margin:14px 0 0}
+.xp-scale6{width:236px}
+.xp-ramp{display:flex;gap:1px;height:10px;border-radius:2px;overflow:hidden}
+.xp-ramp span{flex:1}
+.xp-rampt{position:relative;height:15px;font-family:var(--mono);font-size:10px;color:var(--muted)}
+.xp-rampt span{position:absolute;top:2px;transform:translateX(-50%)}
+.xp-leg{list-style:none;padding:0;margin:0;display:flex;flex-wrap:wrap;gap:6px 15px;
+  font-size:11.5px;color:var(--muted);flex:1 1 360px}
+.xp-leg li{display:flex;align-items:center;gap:5px}
+.xp-leg .xp-c{display:inline-block;width:auto;min-width:34px;height:19px;line-height:17px;
+  padding:0 4px;cursor:default;font-style:normal}
+.xp-leg .xp-c.mo{font-style:italic}
+.xp-leg .xp-c:hover{outline:0}
+.xp-cap{font-size:11.5px;color:var(--muted);line-height:1.5;margin:10px 0 0;max-width:80ch}
 
 .xp-main{display:grid;grid-template-columns:274px 1fr}
 .xp-model{border-right:1px solid var(--line);padding:16px 16px 18px;min-width:0}
@@ -199,7 +286,6 @@ figcaption b{color:var(--ink);font-weight:600}
 .xp-scale{margin-bottom:9px}
 .xp-track{position:relative;height:10px;background:var(--panel);border-radius:2px;overflow:hidden}
 .xp-fill{position:absolute;top:0;bottom:0;left:0;background:var(--ours);opacity:.85}
-.xp-ref{position:absolute;top:0;bottom:0;width:2px;background:var(--ink)}
 .xp-whisk{position:relative;height:9px;margin-top:1px}
 .xp-whisk span{position:absolute;top:3px;height:3px;background:#a9cdc9;border-radius:2px}
 .xp-whisk span::before,.xp-whisk span::after{content:"";position:absolute;top:-3px;width:2px;
@@ -218,10 +304,22 @@ figcaption b{color:var(--ink);font-weight:600}
 .xp-dim{color:var(--muted);font-weight:400}
 .xp-note{font-size:12px;line-height:1.55;color:var(--muted);margin:14px 0 0}
 .xp-fn{font-size:11.5px;line-height:1.55;color:var(--muted);margin:12px 0 0}
-.xp-nm,.xp-oom{font-size:12.5px;color:var(--muted);font-style:italic;margin:0}
-.xp-oom{color:var(--bad);font-style:normal}
+.xp-num.bad{color:var(--bad);font-weight:600}
+.xp-nm{font-size:12.5px;color:var(--muted);font-style:italic;margin:0}
+.xp-nm.bad{color:var(--bad);font-style:normal}
+.xp-sub{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--muted);margin:14px 0 4px}
+.xp-flags{margin:0 0 2px}
+.xp-suites{border-collapse:collapse;width:100%;table-layout:fixed}
+.xp-suites th{font-size:10.5px;font-weight:400;color:var(--muted);text-align:right;padding:0 0 2px}
+.xp-suites td{text-align:right;color:var(--ink);padding:0}
+.xp-flags code{white-space:normal;font-size:11.5px}
 
 .xp-cands{padding:16px 18px 18px;min-width:0;overflow-x:auto}
+.xp-dhead{display:flex;flex-wrap:wrap;align-items:baseline;column-gap:8px;margin-bottom:10px}
+.xp-dhead b{font-size:16px;font-weight:600;color:var(--ink)}
+.xp-dhead .xp-b{margin:0}
+.xp-dhead span{flex-basis:100%;font-size:12px;color:var(--muted)}
 .xp-cands table{border-collapse:collapse;width:100%;font-size:13px}
 .xp-cands thead th{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
   color:var(--muted);text-align:right;padding:0 8px 6px 0;border-bottom:1px solid var(--line);
@@ -261,6 +359,7 @@ footer p{margin:.4rem 0}
   .xp-main{grid-template-columns:1fr}
   .xp-model{border-right:0;border-bottom:1px solid var(--line)}
   .xp-cands{padding:14px}
+  .xp-matrix{padding:14px}
   .xp-barh,.xp-bar{width:48px}
 }
 @media (max-width:560px){
@@ -279,8 +378,9 @@ footer p{margin:.4rem 0}
 <header>
   <h1><span class="eng">vla.cpp</span>: A Unified Inference Runtime for
   Vision&ndash;Language&ndash;Action Models</h1>
-  <p class="punch">Eleven vision&ndash;language&ndash;action policies, one C++ runtime &mdash; from a
-  desktop GPU down to an 8&nbsp;GB Jetson, with no PyTorch at inference time.</p>
+  <p class="punch">Thirteen vision&ndash;language&ndash;action policies, one C++ runtime, seven
+  backends &mdash; from a desktop GPU down to an 8&nbsp;GB Jetson, with no PyTorch at inference
+  time.</p>
 
   <nav class="links">
     <a class="btn soon" href="#"><span class="ic">▣</span> Paper</a>
@@ -288,29 +388,57 @@ footer p{margin:.4rem 0}
     <a class="btn" href="#explorer"><span class="ic">◈</span> Model &times; backend explorer</a>
     <a class="btn" href="#robot"><span class="ic">▶</span> Robot videos</a>
   </nav>
+
+  <p class="notice" role="note"><b>Updated since submission.</b> This page describes
+  <code>vla.cpp</code> as it is now, not as in the submitted paper: thirteen models instead of
+  eleven, seven backends instead of five, and newer LIBERO and latency measurements. Counts and
+  numbers here, including in the teaser figure, can therefore differ from the paper&rsquo;s.
+  Last updated October 2026.</p>
 </header>
 
-<!-- ============================== highlights ============================== -->
-<section id="highlights">
-  <div class="hl">
-    <div><div class="v">11 models</div><div class="l">one runtime, one bundle format</div></div>
-    <div><div class="v">200/200</div><div class="l">BitVLA episodes on an 8&nbsp;GB Jetson Orin Nano</div></div>
-    <div><div class="v">4.0&ndash;4.6&times;</div><div class="l">ternary tensor-core kernel over the CUDA-core baseline</div></div>
-    <div><div class="v">5<div class="v">5 backends</div>nbsp;backends</div><div class="l">CUDA, Metal, CPU, SYCL and OpenVINO</div></div>
-  </div>
+<!-- ============================== teaser ============================== -->
+<section id="teaser">
+  <figure>
+    <div class="tz-row">
+      <div class="tz-p" style="--x:0;--w:165"><img src="assets/teaser.svg" alt="(a) Shared runtime and model format: the vla.cpp C++ server with GGUF weights serves 13 VLA models (SmolVLA, Evo-1, π0, π0.5, Octo-Small, GR00T-N1.5, N1.6 and N1.7, VLA-JEPA, TurboVLA, VLA-Adapter, OpenVLA-OFT, BitVLA) through 7 backends (CUDA, ROCm, Metal, CPU, SYCL, OpenVINO, Hexagon) on RTX 30xx–50xx, Radeon RX 9060 XT and Arc A380 GPUs, Apple M4, Core Ultra iGPU and NPU, Snapdragon X CPU and NPU, desktop CPUs, and Jetson AGX Orin, Orin NX and Orin Nano."></div>
+      <div class="tz-p" style="--x:165;--w:122.75"><img src="assets/teaser.svg" alt="(b) Task success vs. reference: vla.cpp LIBERO-Object success from the latest 200-episode run plotted against the reference rate. Eight of eleven models lie within 4 points of parity; SmolVLA (89.5% vs. 96%), GR00T-N1.6 (86.5% vs. 99%) and π0 (72% vs. 79%) fall below it. BitVLA and VLA-JEPA reach 100%."></div>
+      <div class="tz-p" style="--x:287.75;--w:99.25"><img src="assets/teaser.svg" alt="(c) Ternary execution: BitVLA milliseconds per executed action, dp4a against the IMMA tensor-core kernel. RTX 3060: 172.8 vs. 37.9 ms (4.6×). AGX Orin: 406.6 vs. 101.1 ms (4.0×)."></div>
+      <div class="tz-p" style="--x:387;--w:118.47"><img src="assets/teaser.svg" alt="(d) On the robot: UR10e task success with 95% intervals against round-trip latency. CUDA 75% at 111 ms (17.7 Hz), Metal 60% at 582 ms, CPU i9 60% at 2164 ms, CPU Ryzen 70% at 3653 ms (5.0 Hz): a 33× latency range."></div>
+    </div>
+    <figcaption><b><code>vla.cpp</code> across models and hardware.</b> (a) Shared runtime components
+      support thirteen VLA models on seven backends; backend coverage varies by model. (b)
+      LIBERO-Object success over 200 episodes per model, from the latest run on an RTX&nbsp;3090,
+      against published rates or PyTorch reproductions (&pi;<sub>0</sub> and GR00T); the shaded band
+      marks &plusmn;4 percentage points. All three models outside it replay a different number of
+      actions per chunk than their upstream evaluations. Octo-Small (8%) and TurboVLA (100%) have no
+      reference rate and are not plotted. (c) Tensor-core execution reduces BitVLA&rsquo;s client
+      inference time per executed action by 4.0&ndash;4.6&times; at <i>S</i>&nbsp;=&nbsp;8. (d)
+      UR10e task success and 95% Wilson intervals across four backends; round-trip latency varies
+      by 33&times;. Panels (a) and (b) are updated since submission; (c) and (d) are as
+      submitted.</figcaption>
+  </figure>
 </section>
 
 <!-- ============================== abstract ============================== -->
 <section id="abstract">
+  <p class="bk-h" id="bk-h">Supported backends</p>
+  <ul class="bk" aria-labelledby="bk-h">
+    <li class="cuda"><b>CUDA</b> NVIDIA</li>
+    <li class="rocm"><b>ROCm</b> AMD</li>
+    <li class="npu"><b>Hexagon</b> Qualcomm</li>
+    <li class="ov"><b>OpenVINO / SYCL</b> Intel</li>
+    <li class="metal"><b>Metal</b> Apple</li>
+    <li class="cpu"><b>CPU</b> x86-64 / Arm</li>
+  </ul>
   <h2>Abstract</h2>
   <p class="abstract">Deploying vision&ndash;language&ndash;action (VLA) models on robots requires
   adapting model-specific inference pipelines to heterogeneous processors and limited onboard
-  memory. We present <code>vla.cpp</code>, a unified C++ inference runtime for eleven VLA models.
+  memory. We present <code>vla.cpp</code>, a unified C++ inference runtime for thirteen VLA models.
   The runtime shares model loading, tensor execution, and serving while retaining
   architecture-specific attention, conditioning, and action heads. Iterative policies reuse
   observation-dependent computation across solver steps; regression policies use a direct
   prediction path. We evaluate task success on LIBERO-Object and profile supported configurations
-  on NVIDIA, Apple, and Intel hardware. BitVLA completes 200/200 LIBERO-Object episodes on an
+  across seven backends on NVIDIA, AMD, Apple, Intel, and Qualcomm hardware. BitVLA completes 200/200 LIBERO-Object episodes on an
   8&nbsp;GB Jetson Orin Nano; a separate desktop measurement records 1.3&nbsp;GiB of device memory.
   A ternary tensor-core kernel accelerates its client inference by 4.0&ndash;4.6&times; over the
   CUDA-core baseline on RTX&nbsp;3060 and AGX&nbsp;Orin. A SmolVLA case study identifies a
@@ -332,15 +460,10 @@ footer p{margin:.4rem 0}
 <!-- ========================= model x backend explorer ========================= -->
 <section id="explorer">
   <h2>Try it: what runs where</h2>
-  <p class="lede">Eleven policies, eight measured platforms, and three separate experiments behind
-  them. Pick a device, click a model, and the page shows exactly what the paper reports for that
-  pair &mdash; including the pairs it does not report.</p>
+  <p class="lede" role="note">The numbers in the table below were last updated in October 2026
+  and may differ from those reported in the paper.</p>
 
   <div class="xp" id="xp-app">
-    <div class="xp-head">
-      <div class="xp-devices" data-pane="devices"></div>
-    </div>
-
     <div class="xp-matrix" data-pane="matrix"></div>
 
     <div class="xp-main">
@@ -351,35 +474,9 @@ footer p{margin:.4rem 0}
     <div class="xp-foot">
       <div class="xp-verdict" data-pane="verdict"></div>
       <div class="xp-sort" role="group" aria-label="Sort key">
-        <button type="button" data-sort="lat" aria-pressed="true">sort by latency</button>
+        <button type="button" data-sort="lat" aria-pressed="true">sort by p50</button>
         <button type="button" data-sort="succ" aria-pressed="false">by success</button>
       </div>
-    </div>
-  </div>
-</section>
-
-  <h3><span class="n">Beyond the table</span>A second simulated benchmark</h3>
-  <p class="subnote">Everything above is LIBERO-Object. On SimplerEnv&rsquo;s WidowX tasks at
-  252-pixel input, GR00T-N1.6 reaches 80% on &ldquo;put carrot on plate&rdquo; and 70% on
-  &ldquo;put spoon on towel&rdquo;.</p>
-  <div class="grid g2" style="max-width:520px;margin-left:auto;margin-right:auto">
-    <div class="vid">
-      <div class="ph sq">
-        <video autoplay muted loop playsinline preload="auto" src="assets/videos/simplerenv-carrot-plate.mp4"></video>
-        <div class="phin"><div class="play"></div><div class="lbl">Video placeholder</div>
-          <span class="file">simplerenv-carrot-plate.mp4</span></div>
-      </div>
-      <div class="vmeta"><div class="sub"><b>Put carrot on plate.</b> The paper reports 80% for
-        GR00T-N1.6 on this task.</div></div>
-    </div>
-    <div class="vid">
-      <div class="ph sq">
-        <video autoplay muted loop playsinline preload="auto" src="assets/videos/simplerenv-eggplant-basket.mp4"></video>
-        <div class="phin"><div class="play"></div><div class="lbl">Video placeholder</div>
-          <span class="file">simplerenv-eggplant-basket.mp4</span></div>
-      </div>
-      <div class="vmeta"><div class="sub"><b>Put eggplant in the basket.</b> Shown as a rollout only;
-        the paper reports no rate for this task.</div></div>
     </div>
   </div>
 </section>
@@ -389,22 +486,14 @@ footer p{margin:.4rem 0}
   <h2>Method</h2>
 
   <figure>
-    <img src="assets/vla-cpp-diagram.png" alt="Architecture of vla.cpp: a C++ server loading GGUF weights and returning action chunks, model adapters selecting policy-specific computation, and a backend layer over CUDA, CPU, Metal, SYCL and OpenVINO.">
+    <img src="assets/vla-cpp-diagram.png" alt="Architecture of vla.cpp: a Python robot or simulator client exchanges Protobuf messages over ZeroMQ with the C++ runtime, which loads a GGUF model bundle and runs on llama.cpp&rsquo;s ggml over hardware backends, with CUDA and CPU shown.">
     <figcaption><b>Architecture.</b> The C++ server loads GGUF weights and returns action chunks; the
       client owns sensing and control. Adapters select model-specific computation &mdash; attention
       pattern, conditioning and action head &mdash; while loading, tensor execution and serving are
-      shared. CUDA and CPU illustrate the backend layer; Metal, SYCL and OpenVINO use the same
-      runtime interface. Observation tokens form a prefix whose features and projections are reused
+      shared. CUDA and CPU illustrate the backend layer; ROCm, Metal, SYCL, OpenVINO and Hexagon
+      use the same runtime interface. Observation tokens form a prefix whose features and projections are reused
       across solver steps, so an iterative head pays for conditioning once per query rather than
       once per step.</figcaption>
-  </figure>
-
-  <figure>
-    <img src="assets/roofline.png" alt="Roofline plot of estimated arithmetic intensity against throughput for the supported models on RTX 3060 and AGX Orin.">
-    <figcaption><b>Where the work lands.</b> Estimated arithmetic intensity and throughput. Compute
-      ceilings are measured GEMM rates of 25.6 and 21.3&nbsp;TFLOP/s; bandwidth ceilings are 360 and
-      204.8&nbsp;GB/s for the RTX&nbsp;3060 and AGX&nbsp;Orin. Point labels give achieved throughput
-      as a fraction of the ceiling. Placement depends on FLOP and byte accounting.</figcaption>
   </figure>
 
   <div class="scene"><b>Numerical validation, not just rollouts.</b> A prediction-check tool fixes
@@ -415,6 +504,57 @@ footer p{margin:.4rem 0}
   value across an index boundary. Matching the reference takes the position-embedding relative error
   from 0.32 to 0.003 and LIBERO-Object task 0 from 2/10 to 9/10 episodes. A rollout score alone
   would not have located it.</div>
+</section>
+
+<!-- ============================== simulation ============================== -->
+<section id="sim">
+  <h2>In simulation</h2>
+  <p class="lede">The explorer&rsquo;s success rates are all LIBERO-Object. Two of its episodes are
+  shown here, run through <code>vla.cpp</code> on an RTX&nbsp;3090, beside two clips from
+  SimplerEnv&rsquo;s WidowX tasks, a second benchmark. There, at 252-pixel input, GR00T-N1.6
+  reaches 80% on &ldquo;put carrot on plate&rdquo; and 70% on &ldquo;put spoon on towel&rdquo;.</p>
+  <div class="grid g4" style="margin-top:1.6rem">
+    <div class="vid">
+      <div class="ph sq">
+        <video autoplay muted loop playsinline preload="auto" src="assets/videos/libero-object-gr00t-n17-alphabet-soup.mp4"></video>
+        <div class="phin"><div class="play"></div><div class="lbl">Video placeholder</div>
+          <span class="file">libero-object-gr00t-n17-alphabet-soup.mp4</span></div>
+      </div>
+      <div class="vmeta"><div class="top"><span class="tag ctl">LIBERO-Object</span></div>
+        <div class="sub"><b>Pick up the alphabet soup and place it in the basket.</b> GR00T-N1.7, a
+        successful episode.</div></div>
+    </div>
+    <div class="vid">
+      <div class="ph sq">
+        <video autoplay muted loop playsinline preload="auto" src="assets/videos/libero-object-bitvla-butter.mp4"></video>
+        <div class="phin"><div class="play"></div><div class="lbl">Video placeholder</div>
+          <span class="file">libero-object-bitvla-butter.mp4</span></div>
+      </div>
+      <div class="vmeta"><div class="top"><span class="tag ctl">LIBERO-Object</span></div>
+        <div class="sub"><b>Pick up the butter and place it in the basket.</b> BitVLA, a successful
+        episode.</div></div>
+    </div>
+    <div class="vid">
+      <div class="ph sq">
+        <video autoplay muted loop playsinline preload="auto" src="assets/videos/simplerenv-carrot-plate.mp4"></video>
+        <div class="phin"><div class="play"></div><div class="lbl">Video placeholder</div>
+          <span class="file">simplerenv-carrot-plate.mp4</span></div>
+      </div>
+      <div class="vmeta"><div class="top"><span class="tag ctl">SimplerEnv</span></div>
+        <div class="sub"><b>Put carrot on plate.</b> GR00T-N1.6 succeeds in 80% of trials on this
+        task.</div></div>
+    </div>
+    <div class="vid">
+      <div class="ph sq">
+        <video autoplay muted loop playsinline preload="auto" src="assets/videos/simplerenv-eggplant-basket.mp4"></video>
+        <div class="phin"><div class="play"></div><div class="lbl">Video placeholder</div>
+          <span class="file">simplerenv-eggplant-basket.mp4</span></div>
+      </div>
+      <div class="vmeta"><div class="top"><span class="tag ctl">SimplerEnv</span></div>
+        <div class="sub"><b>Put eggplant in the basket.</b> Shown as a rollout only; no success rate
+        is reported for this task.</div></div>
+    </div>
+  </div>
 </section>
 
 <!-- ============================== deployment ============================== -->
@@ -527,13 +667,18 @@ footer p{margin:.4rem 0}
   evaluated on the Orin Nano.</p>
 
   <figure class="narrow">
-    <img src="assets/replan-sweep.png" alt="Execution-horizon sweep: success against S for SmolVLA on LIBERO-Object, with 95% Wilson intervals.">
+    <div class="hz-key" aria-hidden="true">
+      <span><svg width="26" height="10"><line x1="1" x2="25" y1="5" y2="5" class="hz-suc"/><circle cx="13" cy="5" r="4" class="rf-pt"/></svg><span>Task success, 95% Wilson interval</span></span>
+      <span><svg width="26" height="10"><line x1="1" x2="25" y1="5" y2="5" class="hz-thr"/><rect x="9" y="1" width="8" height="8" class="hz-sq"/></svg><span>Throughput <i>S</i>/<i>L</i></span></span>
+    </div>
+    <div class="hz" id="hz-app"></div>
     <figcaption><b>Execution horizon.</b> Raising <i>S</i> amortises inference over more actions
       &mdash; throughput climbs from 2.8 to 109.4&nbsp;Hz &mdash; but it also delays feedback.
       Success varies non-monotonically up to <i>S</i>&nbsp;=&nbsp;32, peaks at 49/50 at
       <i>S</i>&nbsp;=&nbsp;16, and falls to 19/50 at <i>S</i>&nbsp;=&nbsp;<i>H</i>, where the robot
       executes the whole predicted chunk before observing again. A runtime comparison should
-      therefore state both <i>S</i> and the solver step count <i>T</i>.</figcaption>
+      therefore state both <i>S</i> and the solver step count <i>T</i>. Hover over a setting for its
+      numbers.</figcaption>
   </figure>
 
   <div class="scene"><b>Delay is not the whole story.</b> Injecting an artificial delay after
@@ -541,6 +686,26 @@ footer p{margin:.4rem 0}
   or 10/10 from 0 all the way to 2000&nbsp;ms, with ten episodes per condition. Small samples near
   100% success resolve little, but on this quasi-static tabletop task the execution horizon matters
   more than the latency it hides.</div>
+
+  <!-- ---------- D. roofline ---------- -->
+  <h3><span class="n">Compute &middot; D</span>Where the inference time goes</h3>
+  <p class="subnote">The ten models with BF16 weights, at the defaults of the latest benchmark
+  round, on the RTX&nbsp;3060 and Jetson AGX Orin.</p>
+
+  <figure id="roofline">
+    <div class="rf" id="rf-app"></div>
+    <figcaption><b>Where the work lands.</b> Arithmetic intensity against achieved throughput for one
+      call at the defaults, using the p50 latencies from the explorer above. The work is counted from
+      each model&rsquo;s runtime graphs at the benchmark&rsquo;s inputs. FLOPs come from every matrix
+      multiply, attention included. Bytes are the weights and cached keys and values those multiplies
+      read, with an action head&rsquo;s weights read once per solver step. Activations are not
+      counted, so intensities are upper bounds. Hover over a point, or tab to it, for its numbers;
+      N1.5, N1.6 and N1.7 are GR00T. The roof combines measured BF16 GEMM rates of 25.6 and
+      21.3&nbsp;TFLOP/s with nominal bandwidths of 360 and 204.8&nbsp;GB/s, so it shows only the
+      models whose multiplies run in BF16. BitVLA multiplies in int8 on the tensor cores, and
+      Octo-Small and TurboVLA in F32; each has a different ceiling, so none of the three is plotted.
+      OpenVLA-OFT does not fit on the RTX&nbsp;3060.</figcaption>
+  </figure>
 </section>
 
 <footer>
@@ -550,6 +715,8 @@ footer p{margin:.4rem 0}
 </div>
 
 <script src="assets/explorer.js" charset="utf-8"></script>
+<script src="assets/roofline.js" charset="utf-8"></script>
+<script src="assets/horizon.js" charset="utf-8"></script>
 <script>
 // A placeholder becomes a real player as soon as its .mp4 is dropped in.
 document.querySelectorAll('.ph video').forEach(function(v){

@@ -7,11 +7,16 @@ Anonymous project page for the ICRA 2027 submission. Static, no build step:
 ## Layout
 
     index.html                  the whole page (inline CSS, ~20 lines of JS)
-                                order: highlights, abstract, video, explorer, method, robots
+                                order: teaser, backend chips, abstract, video, explorer, method, simulation, robots
     assets/explorer.js          the model x backend explorer
+    assets/roofline.js          the roofline, drawn in the page from counted FLOPs and bytes
+    assets/horizon.js           the execution-horizon sweep, drawn in the page from the paper's table
+    assets/teaser.svg           the teaser: the paper's Fig. 1, updated to the current project
+    figures/                    the teaser's TikZ source and build script
+    figures/roofline/           how the roofline's FLOPs and bytes were counted
     assets/vla.cpp.mp4          hero overview video (+ -poster.jpg)
     assets/*.png, ur10e.jpg     figures rasterised from the paper's PDFs
-    assets/videos/*.mp4         four ALOHA rollouts and two SimplerEnv clips
+    assets/videos/*.mp4         four ALOHA rollouts, two LIBERO-Object and two SimplerEnv clips
 
 Total, about 20 MB. Everything is tracked in git.
 
@@ -25,7 +30,7 @@ and 10px radii.
     Text        #4a4a4a   body
     Muted       #7a7a7a   captions
     Border      #dbdbdb   rules, card edges
-    Panel       #f5f5f5   stat tiles, callouts
+    Panel       #f5f5f5   callouts, explorer matrix
     Link        #3273dc   links, and every selection affordance
 
 Two extra colours, and the split between them is the whole convention:
@@ -38,39 +43,155 @@ cells, the `vla.cpp BF16` tag on the robot cards. Baselines — eager PyTorch, `
 Ryzen host that the SYCL numbers are measured against — stay neutral. Blue means *you can click
 this*. Light only; `color-scheme: light` stops browsers auto-inverting it.
 
+## Paper vs. current project
+
+The page describes the project as it is now, not the submitted paper; the `.notice` under the
+header says so. Where the project has newer information, the page uses it:
+
+- thirteen models and seven backends (ROCm and Hexagon added) in the meta description, hero,
+  abstract, teaser panel (a) and the architecture caption;
+- teaser panel (b) plots the latest 200-episode LIBERO-Object run (`docs/benchmark/libero.md`)
+  against the paper's reference rates, which puts SmolVLA, GR00T-N1.6 and π0 outside the ±4 pp
+  band (the paper had only N1.6 outside). Octo-Small and TurboVLA have no reference rate;
+- the explorer (below);
+- the roofline (below) is redrawn from the explorer's latencies and a fresh FLOP and byte count;
+- the architecture diagram is cropped above its "One Runtime · … · Eleven Models" banner.
+
+Everything else has nothing newer and still comes from the paper: teaser panels (c) and (d), the
+abstract's BitVLA results (200/200 on the Orin Nano, 1.3 GiB, 4.0–4.6×), the SmolVLA case study,
+SimplerEnv, and the whole robot section.
+
+## Roofline
+
+The roofline sits at the end of the page, as subsection D after the execution horizon, so the
+two cost discussions read together. `assets/roofline.js` draws one panel per device, RTX 3060
+and AGX Orin, as inline SVG so the labels use the page's fonts. It plots the ten models whose
+multiplies run in BF16 (see below). Points are teal like every other measured number; labels
+carry only the model name, and hovering or tabbing to a point shows its numbers. Labels are
+placed in the browser, after measuring them, so they avoid points, each other and the roof; in
+crowded spots a thin leader joins label and point.
+
+Achieved throughput is one `predict()`'s FLOPs over its p50 latency at the defaults, copied from
+the explorer. The ceilings are the paper's: measured BF16 GEMM rates of 25.6 and 21.3 TFLOP/s,
+nominal bandwidths of 360 and 204.8 GB/s.
+
+**The paper's FLOP and byte estimates do not carry over.** Its figure implies 2.7–2.8 TFLOP per
+call for each GR00T model; at today's latencies that would put them above the compute ceiling.
+So the work is counted instead, from the runtime itself:
+
+- `ggml-count.patch` adds a counter to ggml's `ggml_backend_graph_compute_async` (llama.cpp
+  `b11223`, the runtime's pinned tag). FLOPs are 2·M·N·K for every `MUL_MAT`, plus QKᵀ and PV for
+  every `FLASH_ATTN_EXT`. Bytes are the operands of those ops that no op in the graph produced:
+  weights at their resident dtype, counted at every use (so an action head's weights count once
+  per solver step), plus cached keys and values. Activations are not counted, so intensities are
+  upper bounds, by the same convention as the paper's (a BF16 layer over N tokens scores N).
+- `stub.py` writes a sparse stand-in for a checkpoint from its header alone, so no weights need
+  downloading. `count.sh` runs `vla-bench` on the CPU backend at each model's benchmark views,
+  input size and prompt length, once with one call and once with two; `tally.py` takes the
+  difference. The CPU backend keeps every op inside ggml, where the counter sees it.
+
+**Only BF16 models are plotted.** The roof is a BF16 GEMM rate, which is the ceiling only for
+multiplies that run in BF16 on the tensor cores: the ten models with BF16 resident weights.
+Three are left off because a BF16 roof is not their ceiling:
+
+- **BitVLA** multiplies int8 activations by unpacked ternary weights on the int8 tensor cores
+  (`mma.sync.m16n8k32` and `wmma`, in `src/kernels/bitvla/`). Against the BF16 roof it lands at
+  107% on the RTX 3060 and 99% on AGX Orin. That is not a counting error, but it reads as one;
+  the int8 tensor-core rate is a separate, higher ceiling, so BitVLA stays off this plot.
+- **Octo-Small** and **TurboVLA** keep their F32 weights as shipped and multiply in F32, whose
+  ceiling is lower than the roof drawn.
+
+Two models are counted by hand under the same rules:
+
+- **OpenVLA-OFT**: its 14 GB of BF16 weights do not fit the 15 GB host that ran the counter. Its
+  sequence through `vla-bench` is 330 tokens (16 prompt, 256 image, 1 proprio, 56 action, 1
+  stop). With a 7B LM and the dual vision tower, that gives 4737 GFLOP and 14.81 GB. As a check,
+  counting VLA-Adapter by hand the same way, with the same vision towers, comes within 1% of the
+  counter's FLOPs and matches its bytes exactly.
+- **BitVLA** (not plotted): its packed ternary weights run only in its own CUDA kernels, outside
+  ggml. Its layout is OFT's with the BitNet LM, 330 tokens. That gives 1626 GFLOP: the LM 1409,
+  the vision tower 211, the projector 5 and the head 1. The bytes are the 0.92 GB it holds
+  resident: 2-bit weights plus an F32 head and projector.
+
+| Model | GFLOP | GB | FLOP/byte | RTX 3060 | AGX Orin |
+|---|--:|--:|--:|--:|--:|
+| GR00T N1.7 | 621.9 | 9.823 | 63 | 33% | 51% |
+| GR00T N1.6 | 703.1 | 9.462 | 74 | 35% | 45% |
+| VLA-JEPA | 528.8 | 4.568 | 116 | 36% | 41% |
+| GR00T N1.5 | 863.2 | 6.013 | 144 | 39% | 41% |
+| Evo-1 | 1492.8 | 7.981 | 187 | 25% | 23% |
+| SmolVLA | 650.1 | 2.912 | 223 | 20% | 18% |
+| π0 | 2821.2 | 11.763 | 240 | 48% | 49% |
+| π0.5 | 2810.9 | 11.636 | 242 | 48% | 49% |
+| VLA-Adapter | 660.3 | 2.506 | 263 | 34% | 39% |
+| OpenVLA-OFT | 4737.2 | 14.807 | 320 | — | 75% |
+| *Not plotted* | | | | | |
+| Octo-Small (F32) | 18.8 | 0.231 | 82 | | |
+| TurboVLA (F32) | 102.1 | 0.429 | 238 | | |
+| BitVLA (int8) | 1625.7 | 0.922 | 1763 | | |
+
+The percentages are achieved throughput as a share of the BF16 roof at that intensity. The GR00T
+models land at 63–144 FLOP/byte, not the paper's 285, because their action heads re-read 1–2 GB
+of weights at every one of four solver steps. On AGX Orin, N1.6 and N1.7 sit left of the ridge.
+
+The counted source is the runtime repository's head on 2026-10-29, a few weeks newer than the
+commits the latencies were measured at. A graph change in between would shift a point; that was not
+checked.
+
 ## Model x backend explorer
 
-`assets/explorer.js` holds every number the page states about models and hardware, transcribed
-from four places in the paper:
+`assets/explorer.js` holds the runtime's latest benchmark round, not the paper's tables. The two
+disagree cell for cell: the round postdates the submission, adds Octo-Small and TurboVLA, and
+times `predict()` in process with `vla-bench` (synthetic inputs, 3 warmups + 20 timed calls,
+best of three processes) where the paper measures requests through the server. The header's
+notice and the line under the section heading cover the mismatch.
 
-    Table I      eleven-model LIBERO-Object evaluation, and the CUDA / Metal / OpenVINO profiles
-    Table III    seven-model device study (RTX 3060, AGX Orin, Orin Nano)
-    Table IV     server-side latency against eager and compiled PyTorch, RTX 3090
-    Sec. V-B     the backend-coverage paragraph: i9-14900HX CPU requests, Arc A380 through SYCL
+It is copied from the runtime repository's docs, never retyped:
 
-Eight devices, eleven models, and deliberately incomplete coverage — 58 of the 88 pairs carry a
-number. **Nothing is interpolated.** A pair the paper does not report renders as "not measured",
-and the two Orin Nano checkpoints that do not load render as "out of memory". The coverage matrix
-above the table exists to make that shape visible rather than hide it: the three experiments were
-run on different model subsets with different episode counts and execution horizons, so the
-columns are not directly comparable and the page says so.
+    docs/benchmark/<device>.md   latency and memory at the defaults ("Latency and memory") and
+                                 the fastest flag set ("Fastest configuration"), 21 device and
+                                 backend rows; the reasons a pair has no number ("Not run")
+    docs/benchmark/libero.md     LIBERO-Object successes out of 200 per model (RTX 3090,
+                                 defaults), the replay counts, BitVLA's and GR00T N1.7's four suites
+    docs/backend/{rocm,ov}.md,   fixed-input checks: max |delta| of the action chunk against a
+    hexagon-windows.md           CPU reference, per model, for the RX 9060 XT, the three OpenVINO
+                                 targets and the Hexagon NPU
 
-Per-device column sets live in `COLS`, the latency key that drives the bar and the sort order in
-`LAT`, and the data in `MODELS`. To add a device, append to `DEVICES`, give it a `COLS` entry and
-a `LAT` key, and add its measurements to the models that have them.
+Thirteen models on 21 rows: 240 of the 273 pairs carry a number. **Nothing is interpolated.**
+Every other pair carries the report's reason, as one of five kinds: no path on that backend
+(BitVLA off CUDA, Octo-Small on OpenVINO), out of memory, not attempted because the weights
+exceed the memory, the NPU compiler rejects the graph, or not run.
 
-Two things the app is careful about:
+The matrix is the navigation: devices down, models across, each measured cell shaded by its p50
+at the defaults on one teal ramp, six log-spaced steps from under 30 ms to over 3 s, darker is
+faster. p50 is the headline everywhere (cells, sort, bar, verdict) because min catches boost
+power on the power-limited CPUs. The RTX 5090 row is the exception: it is the PR author's
+numbers, min only, shown in italics.
 
-- **Success and latency come from different experiments.** The left pane shows the 100-episode
-  LIBERO-Object rate with its Wilson interval; the `of 200` column is the separate device study.
-  They are labelled separately and never mixed into one number.
-- **Reference rates are not matched comparisons.** The reference tick is a published rate except
-  for pi0 and the three GR00T checkpoints, where it is the paper's own PyTorch reproduction. The
-  pane says which.
+In the source, `R` and `T` (defaults and fastest flags) are generated from the reports' tables;
+`MODELS`, `DEVICES`, `WHY`/`SKIP` (missing pairs), `CHECK` (fixed-input checks) and `PAIR`
+(per-pair notes) are written by hand from the same docs. Before publishing a regenerated `R`,
+check its `min` column against the summary table in `docs/benchmark/README.md`. In this round
+all 273 cells agree.
+
+Things the app is careful about:
+
+- **Success and latency come from different runs.** Success is measured once, on the RTX 3090
+  at the defaults, through the server and the simulator; the pane says so and never pairs it
+  with another device's latency as if it were measured there.
+- **Fast flags change the numerics.** The tuned column and the "fastest flags" block note that
+  the success rate does not carry over to them. On the Jetson AGX Orin the defaults run the
+  bit-exact CUDA path, which is why most flags are slower there.
+- **A latency is not a correctness check.** Where the backend notes measured one, the pane
+  shows the fixed-input difference and flags anything above the 2.9e-3 bar those notes use;
+  the OpenVINO and Hexagon checks predate the latency pin, and the pane says that too.
+
+What stays out, for anonymity: commit hashes, PR numbers, branch names, the Hugging Face
+organisation the checkpoints live under, and links to the repository.
 
 ## Videos
 
-Seven in total, all tracked.
+Nine in total, all tracked.
 
 `assets/vla.cpp.mp4` is the hero overview, placed after the link buttons the way nerfies places
 its teaser. It is 1:50 **with an audio track**, so it does not autoplay — browsers block autoplay
@@ -89,6 +210,23 @@ The originals are in `vla-cpp.github.io/src/assets/aloha-videos/vlacpp/<task>/<s
 240 clips over three cameras and 1.1 GB, which is why only four are here. That tree also has a
 `pytorch/` sibling, but `aloha-evidence.js` carries no rows for it and the paper reports no
 PyTorch ALOHA numbers, so there is no side-by-side to make.
+
+The *In simulation* section, between Method and the robots, shows four square clips in a row
+(two per row on phones), each tagged with its benchmark.
+
+The two LIBERO-Object clips are the runtime's own episodes from a July 2026 CI check on the RTX
+3090, one episode per task (`outputs/ci/rtx3090/<model>/<model>/libero_object/task_<n>/` in the
+runtime's release tree). Both are successes per their `summary.txt`. They were cropped to the
+scene camera (the left half of the 512x256 two-camera frame), re-encoded with `-map_metadata -1`,
+and are about five seconds, silent, autoplaying. They are not from the 200-episode run behind the
+explorer's success rates, and the page does not say they are.
+
+    libero-object-gr00t-n17-alphabet-soup.mp4   GR00T-N1.7, task 0, alphabet soup into the basket
+    libero-object-bitvla-butter.mp4             BitVLA, task 6, butter into the basket
+
+The same tree has one episode for every LIBERO-Object task for ten models (and all four suites for
+BitVLA and GR00T-N1.7). Of those, π0 failed tasks 3, 4 and 7, and GR00T-N1.5, GR00T-N1.6 and
+SmolVLA one task each; every other clip is a success.
 
 The two SimplerEnv clips are 256x256 and about two seconds, silent, autoplaying.
 
@@ -114,7 +252,8 @@ hero video arrived carrying a `Made with Remotion 4.0.525` comment, which is gon
 Two things in the hero video are worth a look before this goes anywhere public, because neither
 matches the paper:
 
-- it closes on **"Twelve Architectures"**, where the paper says eleven models throughout;
+- it closes on **"Twelve Architectures"**, where the paper says eleven models and the page now
+  says thirteen;
 - it claims to be **"the first native flow-matching and diffusion action-head server on
   llama.cpp"**, a priority claim the paper does not make.
 
@@ -140,5 +279,30 @@ real repository once the submission is no longer blind.
 
     pdftoppm -png -r 300 -singlefile <name>.pdf assets/<name>
 
-from `overleaf/vla.cpp/ICRA/`. `vla-cpp-diagram.png`, `roofline.png`, `replan-sweep.png` and
-`ur10e.jpg` came across already rasterised from the previous page.
+from `overleaf/vla.cpp/ICRA/`. `vla-cpp-diagram.png` and `ur10e.jpg` came across already
+rasterised from the previous page.
+
+The roofline and the execution-horizon sweep are no longer images; both are drawn in the page in
+its own colours and fonts (see *Roofline* above). `assets/horizon.js` holds the sweep's numbers,
+copied from the paper's supplementary table: successes out of 50 with their Wilson intervals,
+request latency and S/L for each S. Success is teal and throughput the neutral second series. The
+S = H setting is shaded like the roofline's memory-bound region, and hovering shows each
+setting's numbers. It keeps the paper's two y-axes.
+
+The diagram was then cropped above its bottom banner, which says eleven models.
+
+The teaser is TikZ, not a PDF. `figures/teaser.tex` is the paper's `teaser.tex` turned into a
+standalone document (IEEEtran, so the fonts match the paper, with the page sized to the figure)
+and updated as described under *Paper vs. current project*; the header comment lists each
+panel's source. Rebuild it with
+
+    figures/build.sh
+
+which needs `tectonic`, poppler's `pdftocairo` and `python3`. It writes `assets/teaser.svg` with
+coordinates rounded to three decimals, about a sixth smaller.
+
+The caption is retyped in `index.html`. The page shows the one SVG as four crops so the panels
+stack below 760px: each `.tz-p` carries `--x` and `--w`, its left edge and width in SVG units (the
+file is 505.47 wide). The splits sit in the blank gaps between panels, measured on Chrome's
+render of the SVG, which is about 1 unit right of poppler's; re-measure them if the figure's
+layout changes.
