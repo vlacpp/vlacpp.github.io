@@ -59,7 +59,8 @@ header says so. Where the project has newer information, the page uses it:
 - the roofline (below) is redrawn from the explorer's latencies and a fresh FLOP and byte count;
 - the architecture is redrawn in the page (see *Architecture* below) and shows all seven backends;
 - the robot section has a third embodiment the paper does not: π0.5 on an SO-101 arm, served
-  from an Intel AI board (subsection C).
+  from an Intel AI board (subsection C);
+- the simulation section has a third benchmark the paper does not: a RoboCasa clip.
 
 Everything else has nothing newer and still comes from the paper: teaser panels (c) and (d), the
 abstract's BitVLA results (200/200 on the Orin Nano, 1.3 GiB, 4.0–4.6×), the SmolVLA case study,
@@ -195,7 +196,7 @@ organisation.
 
 ## Videos
 
-Twelve in total, all tracked.
+Eleven in total, all tracked.
 
 `assets/vla.cpp.mp4` is the hero overview, placed after the link buttons the way nerfies places
 its teaser. It is 1:50 **with an audio track**, so it does not autoplay — browsers block autoplay
@@ -214,23 +215,18 @@ The originals, 240 clips over three cameras and 1.1 GB, stay outside this repo, 
 only four are here. They also include PyTorch runs of the same tasks, but no evidence rows come
 with those and the paper reports no PyTorch ALOHA numbers, so there is no side-by-side to make.
 
-The three SO-101 clips are π0.5 on an Intel AI board (Core Ultra X7 358H), filmed on a phone in
-portrait (368x654). Each was cut, cropped to 4:5 (368x460, dropping green screen above and
-cables below, at a per-clip offset that keeps the arm in frame throughout), sped up 4x with
-`setpts=PTS/4`, scaled to 360x450, stripped of audio and metadata (`-an -map_metadata -1`), and
-encoded with x264 at CRF 28. The page shows them three across, narrower than the column on
-desktop and still three across on phones (`.g3.port`, with `.ph.tall` at 4:5). The page claims
-no success rate or backend for them.
+The SO-101 clip is π0.5 on an Intel AI board (Core Ultra X7 358H), one landscape recording
+(654x368, 0:49) of the arm opening the drawer and pushing it shut. It plays at 1x: scaled to
+640x360, stripped of audio and metadata (`-an -map_metadata -1`), and encoded with x264 at CRF 28,
+4.3 MB down to 0.85 MB. It replaces three earlier 4x portrait clips. The page claims no success
+rate or backend for it.
 
-    file                        task              source cut           crop top   at 4x
-    so101-open-drawer-4x.mp4    open the drawer   whole 0:48           y=30       12 s
-    so101-close-drawer-4x.mp4   close the drawer  first 2:10 of 2:50   y=80       32.5 s
-    so101-stack-cube-4x.mp4     stack the cubes   first 1:30 of 3:15   y=150      22.5 s
+    so101-drawer-1x.mp4         open and close the drawer   0:49 at 1x
 
-The raw recordings, with audio, are kept outside this repo.
+The raw recordings, with audio where they had it, are kept outside this repo.
 
-The *In simulation* section, between Architecture and the robots, shows four square clips in a row
-(two per row on phones), each tagged with its benchmark.
+The *In simulation* section, between Architecture and the robots, shows five square clips in a row
+(two per row on phones, the fifth centred), each tagged with its benchmark.
 
 The two LIBERO-Object clips are the runtime's own episodes from a July 2026 CI check on the RTX
 3090, one episode per task (`outputs/ci/rtx3090/<model>/<model>/libero_object/task_<n>/` in the
@@ -256,6 +252,12 @@ They are not LIBERO: both show a WidowX arm in the SimplerEnv / Bridge scenes, o
 table with a carrot and plate, one at a sink with an eggplant and a yellow basket. They were
 renamed here and captioned for what they are. Nothing on the page claims a policy for them,
 because the asset carries no policy label.
+
+The RoboCasa clip is SmolVLA closing a fridge door, 10 s at 20 fps. The source frame is three
+256x256 views side by side; the page keeps the left, third-person one (`crop=256:256:0:0`),
+re-encoded with `-an -map_metadata -1`. It is shown as a rollout only, with no success rate.
+
+    robocasa-smolvla-close-fridge.mp4   RoboCasa, close the fridge
 
 A placeholder card upgrades itself when its file appears, so more footage needs no HTML edit —
 drop the `.mp4` in and give the card the right filename.
@@ -293,9 +295,9 @@ The architecture is HTML and CSS in `index.html`, not an image, so it reflows: f
 screens, read left to right as bundle, wire, runtime, wire, client, and one stacked column in the
 same order with vertical arrows below 760px. It keeps the paper's diagram's content (client
 fields, Protobuf over ZeroMQ, the runtime's four features, llama.cpp's ggml, the GGUF bundle) but
-shows all seven backends instead of CUDA and CPU, adds the SO-101 to the client's targets, and
-lists only `model.gguf` in the bundle. The client's five thumbnails sit two by two with the SO-101
-centred under them; on phones they run in one row of five.
+shows all seven backends instead of CUDA and CPU, adds RoboCasa and the SO-101 to the client's
+targets, and lists only `model.gguf` in the bundle. The client's six thumbnails sit two by two
+(simulators first, then robots); on phones they run three by two.
 
 Its pictures and marks, all local, nothing loaded from elsewhere:
 
@@ -309,9 +311,9 @@ Its pictures and marks, all local, nothing loaded from elsewhere:
 - `assets/arch/llama-cpp.svg`: llama.cpp's icon (`media/llama1-icon-transparent.svg`, MIT), with
   the editor metadata stripped.
 - `assets/arch/vla-cpp-logo.png`: the project's wordmark from the previous page, trimmed to 250x48.
-- `assets/arch/{libero,simplerenv,aloha,ur10e,so101}.jpg`: 168x126 thumbnails cut from the page's
-  own clips and the UR10e figure; the SO-101 one is a frame of the stacking rollout at 0:55, saved
-  without metadata.
+- `assets/arch/{libero,simplerenv,robocasa,aloha,ur10e,so101}.jpg`: 168x126 thumbnails cut from
+  the page's own clips and the UR10e figure. RoboCasa is frame 30 of its clip, SO-101 the drawer
+  clip at 0:20; both saved without metadata.
 
 The backend chips above the abstract use the same sprite, a logo before each backend, and drop the
 vendor's name where the logo is the name (AMD, Intel).
