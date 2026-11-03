@@ -58,8 +58,8 @@ header says so. Where the project has newer information, the page uses it:
 - the explorer (below);
 - the roofline (below) is redrawn from the explorer's latencies and a fresh FLOP and byte count;
 - the architecture is redrawn in the page (see *Architecture* below) and shows all seven backends;
-- the robot section has a third embodiment the paper does not: π0.5 on an SO-101 arm, served
-  from an Intel AI board (subsection C);
+- the robot section has a third embodiment the paper does not: π0.5 and GR00T-N1.7 on an SO-101
+  arm, served from an Intel AI board (subsection C);
 - the simulation section has a third benchmark the paper does not: a RoboCasa clip.
 
 Everything else has nothing newer and still comes from the paper: teaser panels (c) and (d), the
@@ -196,7 +196,7 @@ organisation.
 
 ## Videos
 
-Eleven in total, all tracked.
+Twelve in total, all tracked.
 
 `assets/vla.cpp.mp4` is the hero overview, placed after the link buttons the way nerfies places
 its teaser. It is 1:50 **with an audio track**, so it does not autoplay — browsers block autoplay
@@ -215,13 +215,16 @@ The originals, 240 clips over three cameras and 1.1 GB, stay outside this repo, 
 only four are here. They also include PyTorch runs of the same tasks, but no evidence rows come
 with those and the paper reports no PyTorch ALOHA numbers, so there is no side-by-side to make.
 
-The SO-101 clip is π0.5 on an Intel AI board (Core Ultra X7 358H), one landscape recording
-(654x368, 0:49) of the arm opening the drawer and pushing it shut. It plays at 1x: scaled to
-640x360, stripped of audio and metadata (`-an -map_metadata -1`), and encoded with x264 at CRF 28,
-4.3 MB down to 0.85 MB. It replaces three earlier 4x portrait clips. The page claims no success
-rate or backend for it.
+The two SO-101 clips are π0.5 and GR00T-N1.7 on an Intel AI board (Core Ultra X7 358H), one
+landscape recording each (654x368) of the same task: the arm opens the drawer, puts the red block
+in and pushes the drawer shut. The card's wording is read off the footage, not a task string. Both
+play at 1x: scaled to 640x360, stripped of audio and metadata (`-an -map_metadata -1`), and encoded
+with x264 at CRF 28. They replace earlier SO-101 clips: three 4x portrait ones, then a single
+drawer clip that was labelled π0.5 but was the GR00T-N1.7 recording. The page claims no success
+rate or backend for them.
 
-    so101-drawer-1x.mp4         open and close the drawer   0:49 at 1x
+    so101-drawer-pi05-1x.mp4        π0.5         0:57   4.9 MB -> 0.92 MB
+    so101-drawer-gr00t-n17-1x.mp4   GR00T-N1.7   0:49   4.3 MB -> 0.85 MB
 
 The raw recordings, with audio where they had it, are kept outside this repo.
 
@@ -312,8 +315,8 @@ Its pictures and marks, all local, nothing loaded from elsewhere:
   the editor metadata stripped.
 - `assets/arch/vla-cpp-logo.png`: the project's wordmark from the previous page, trimmed to 250x48.
 - `assets/arch/{libero,simplerenv,robocasa,aloha,ur10e,so101}.jpg`: 168x126 thumbnails cut from
-  the page's own clips and the UR10e figure. RoboCasa is frame 30 of its clip, SO-101 the drawer
-  clip at 0:20; both saved without metadata.
+  the page's own clips and the UR10e figure. RoboCasa is frame 30 of its clip, SO-101 the GR00T-N1.7
+  drawer clip at 0:20; both saved without metadata.
 
 The backend chips above the abstract use the same sprite, a logo before each backend, and drop the
 vendor's name where the logo is the name (AMD, Intel).
