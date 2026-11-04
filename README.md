@@ -199,8 +199,10 @@ organisation.
 Twelve in total, all tracked.
 
 `assets/vla.cpp.mp4` is the hero overview, placed after the link buttons the way nerfies places
-its teaser. It is 1:50 **with an audio track**, so it does not autoplay — browsers block autoplay
-with sound. It gets controls and a poster frame (`assets/vla.cpp-poster.jpg`, `ffmpeg -ss 30`).
+its teaser. It is 1:53, 1920x1080, **with a music track** (no narration), so it does not autoplay —
+browsers block autoplay with sound. It is the Remotion render remuxed as-is with
+`-map_metadata -1`, not re-encoded. It gets controls and a poster frame
+(`assets/vla.cpp-poster.jpg`, the title card at `ffmpeg -ss 4`).
 
 The four ALOHA clips are the external overview camera, GR00T-N1.6 in BF16 on an AGX Orin,
 re-encoded at 3x speed and 640px wide with `setpts=PTS/3`. Two successes and two failures: 35 of
@@ -271,18 +273,12 @@ This page names the authors (in the footer's BibTeX) and links the arXiv paper a
 the paper is under double-anonymous review, nothing submitted for review may link here, and this
 page must not link to any anonymous copy of itself. `<meta name="robots" content="noindex">` keeps
 it out of search results until the review ends. The figure PNGs are rasterised, so they carry no
-PDF metadata. Every video was re-muxed with `-map_metadata -1`; the
-hero video arrived carrying a `Made with Remotion 4.0.525` comment, which is gone.
+PDF metadata. Every video was re-muxed with `-map_metadata -1`.
 
-Two things in the hero video are worth a look before this goes anywhere public, because neither
-matches the paper:
-
-- it closes on **"Twelve Architectures"**, where the paper says eleven models and the page now
-  says thirteen;
-- it claims to be **"the first native flow-matching and diffusion action-head server on
-  llama.cpp"**, a priority claim the paper does not make.
-
-Re-render or trim the video if either should go.
+The hero video's current cut (November 2026) matches the page: thirteen models, seven backends,
+the three robots and RoboCasa, and no priority claim. An earlier cut closed on "Twelve
+Architectures" and called itself the first flow-matching and diffusion action-head server on
+llama.cpp; both are gone.
 
 ## Paper, code and BibTeX
 
