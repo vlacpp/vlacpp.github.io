@@ -154,18 +154,19 @@ notice and the line under the section heading cover the mismatch.
 It is copied from the runtime repository's docs, never retyped:
 
     docs/benchmark/<device>.md   latency and memory at the defaults ("Latency and memory") and
-                                 the fastest flag set ("Fastest configuration"), 21 device and
+                                 the fastest flag set ("Fastest configuration"), 22 device and
                                  backend rows; the reasons a pair has no number ("Not run")
     docs/benchmark/libero.md     LIBERO-Object successes out of 200 per model (RTX 3090,
                                  defaults), the replay counts, BitVLA's and GR00T N1.7's four suites
     docs/backend/{rocm,ov}.md,   fixed-input checks: max |delta| of the action chunk against a
-    hexagon-windows.md           CPU reference, per model, for the RX 9060 XT, the three OpenVINO
-                                 targets and the Hexagon NPU
+    hexagon{,-windows}.md        CPU reference, per model, for the RX 9060 XT, the three OpenVINO
+                                 targets and the two Hexagon NPUs
 
-Thirteen models on 21 rows: 240 of the 273 pairs carry a number. **Nothing is interpolated.**
-Every other pair carries the report's reason, as one of five kinds: no path on that backend
+Fourteen models on 22 rows: 260 of the 308 pairs carry a number. **Nothing is interpolated.**
+Every other pair carries the report's reason, as one of four kinds: no path on that backend
 (BitVLA off CUDA, Octo-Small on OpenVINO), out of memory, not attempted because the weights
-exceed the memory, the NPU compiler rejects the graph, or not run.
+exceed the memory, or not run (ACT is measured only on the Dragonwing IQ-10, and has no LIBERO
+success rate).
 
 The matrix is the navigation: devices down, models across, each measured cell shaded by its p50
 at the defaults on one teal ramp, six log-spaced steps from under 30 ms to over 3 s, darker is
@@ -177,7 +178,7 @@ In the source, `R` and `T` (defaults and fastest flags) are generated from the r
 `MODELS`, `DEVICES`, `WHY`/`SKIP` (missing pairs), `CHECK` (fixed-input checks) and `PAIR`
 (per-pair notes) are written by hand from the same docs. Before publishing a regenerated `R`,
 check its `min` column against the summary table in `docs/benchmark/README.md`. In this round
-all 273 cells agree.
+all 308 cells agree.
 
 Things the app is careful about:
 
@@ -189,7 +190,7 @@ Things the app is careful about:
   bit-exact CUDA path, which is why most flags are slower there.
 - **A latency is not a correctness check.** Where the backend notes measured one, the pane
   shows the fixed-input difference and flags anything above the 2.9e-3 bar those notes use;
-  the OpenVINO and Hexagon checks predate the latency pin, and the pane says that too.
+  the Snapdragon X Hexagon checks predate the latency pin, and the pane says that too.
 
 The explorer's data names no one: no commit hashes, PR numbers, branch names or Hugging Face
 organisation.
