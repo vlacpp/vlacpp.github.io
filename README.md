@@ -16,6 +16,7 @@ Project page for vla.cpp, linking the arXiv paper and the code. Static, no build
     figures/                    the teaser's TikZ source and build script
     figures/roofline/           how the roofline's FLOPs and bytes were counted
     assets/vla.cpp.mp4          hero overview video (+ -poster.jpg)
+    favicon.ico                 the V mark cut from the vla.cpp logo, 16-256 px, transparent
     assets/ur10e.jpg            the UR10e figure, rasterised from the paper's PDF
     assets/arch/                the architecture's logos and thumbnails (icons are a sprite in index.html)
     assets/videos/*.mp4         four ALOHA rollouts, two LIBERO-Object and two SimplerEnv clips
