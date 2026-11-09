@@ -277,9 +277,10 @@ page must not link to any anonymous copy of itself. `<meta name="robots" content
 it out of search results until the review ends. The figure PNGs are rasterised, so they carry no
 PDF metadata. Every video was re-muxed with `-map_metadata -1`.
 
-The hero video's current cut (November 2026) is one model behind the page: it says thirteen
-models (the page has fourteen since ACT), seven backends, the three robots and RoboCasa, and
-makes no priority claim. An earlier cut closed on "Twelve
+The hero video's current cut (9 November 2026) matches the page: fourteen models, seven
+backends, the support matrix and SmolVLA latencies of the November benchmark round (including the
+Dragonwing IQ-10), the three robots and RoboCasa, and no priority claim. It names nothing but the
+fai-modelopt-tech project-page URL on its end card. An earlier cut closed on "Twelve
 Architectures" and called itself the first flow-matching and diffusion action-head server on
 llama.cpp; both are gone.
 
