@@ -50,8 +50,9 @@ this*. Light only; `color-scheme: light` stops browsers auto-inverting it.
 The page describes the project as it is now, not the submitted paper; the `.notice` under the
 header says so. Where the project has newer information, the page uses it:
 
-- thirteen models and seven backends (ROCm and Hexagon added) in the meta description, hero,
-  abstract, teaser panel (a) and the architecture caption;
+- fourteen models (ACT added in November 2026) and seven backends (ROCm and Hexagon added) in
+  the meta description, hero, abstract, teaser panel (a) and the architecture caption; panel (a)'s
+  hardware box also lists the Dragonwing IQ-10;
 - teaser panel (b) plots the latest 200-episode LIBERO-Object run (`docs/benchmark/libero.md`)
   against the paper's reference rates, which puts SmolVLA, GR00T-N1.6 and π0 outside the ±4 pp
   band (the paper had only N1.6 outside). Octo-Small and TurboVLA have no reference rate;
@@ -276,8 +277,9 @@ page must not link to any anonymous copy of itself. `<meta name="robots" content
 it out of search results until the review ends. The figure PNGs are rasterised, so they carry no
 PDF metadata. Every video was re-muxed with `-map_metadata -1`.
 
-The hero video's current cut (November 2026) matches the page: thirteen models, seven backends,
-the three robots and RoboCasa, and no priority claim. An earlier cut closed on "Twelve
+The hero video's current cut (November 2026) is one model behind the page: it says thirteen
+models (the page has fourteen since ACT), seven backends, the three robots and RoboCasa, and
+makes no priority claim. An earlier cut closed on "Twelve
 Architectures" and called itself the first flow-matching and diffusion action-head server on
 llama.cpp; both are gone.
 

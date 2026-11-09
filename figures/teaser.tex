@@ -52,10 +52,10 @@
        {\textbf{\texttt{vla.cpp}}\\[1pt] C++ server\\ $+$ GGUF\\ weights};
 
   \node[fanbox] (mdl) at (3.58,3.24)
-       {\textbf{13 VLA models}\\
+       {\textbf{14 VLA models}\\
         SmolVLA\,\textperiodcentered\,Evo-1\,\textperiodcentered\,$\pi_0$\,\textperiodcentered\,$\pi_{0.5}$\,\textperiodcentered\,Octo-Small\\
         GR00T-N1.5/1.6/1.7\,\textperiodcentered\,VLA-JEPA\,\textperiodcentered\,TurboVLA\\
-        VLA-Adapter\,\textperiodcentered\,OpenVLA-OFT\,\textperiodcentered\,BitVLA};
+        VLA-Adapter\,\textperiodcentered\,OpenVLA-OFT\,\textperiodcentered\,BitVLA\,\textperiodcentered\,ACT};
 
   \node[fanbox] (bck) at (3.58,2.17)
        {\textbf{7 backends}\\
@@ -66,8 +66,9 @@
        {\textbf{Target hardware}\\
         RTX 30xx--50xx\,\textperiodcentered\,RX 9060 XT\,\textperiodcentered\,Arc A380\\
         Apple M4\,\textperiodcentered\,Core Ultra iGPU$+$NPU\\
-        Snapdragon X CPU$+$NPU\,\textperiodcentered\,desktop CPUs\\
-        Jetson AGX Orin\,\textperiodcentered\,Orin NX\,\textperiodcentered\,Orin Nano};
+        Snapdragon X CPU$+$NPU\,\textperiodcentered\,Dragonwing IQ-10\\
+        Jetson AGX Orin\,\textperiodcentered\,Orin NX\,\textperiodcentered\,Orin Nano\\
+        Intel and AMD desktop CPUs};
 
   \draw[-{Latex[length=1.3mm]}, vcblue, line width=0.5pt]
         (bin.east) to[out=35,in=180] (mdl.west);
